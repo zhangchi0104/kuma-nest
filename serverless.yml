@@ -1,0 +1,30 @@
+org: alexzhang
+app: blog
+service: blog
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-southeast-2
+  profile: blog-${opt:stage, 'dev'}
+plugins:
+  - serverless-offline
+
+functions:
+  main:
+    handler: dist/main.handler
+    events:
+      - http:
+          method: ANY
+          path: /
+      - http:
+          method: ANY
+          path: '{proxy+}'
+
+package:
+  individually: true
+  patterns:
+    - dist/**
+    - '!.git/**'
+    - '!test/**'
