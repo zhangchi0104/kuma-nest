@@ -2,18 +2,114 @@ org: alexzhang
 app: blog
 service: blog
 frameworkVersion: '3'
-
+useDotenv: true
 provider:
   name: aws
   runtime: nodejs18.x
   region: ap-southeast-2
   profile: blog-${opt:stage, 'dev'}
+
 plugins:
   - serverless-offline
+  - serverless-dotenv-plugin
+resources:
+  Resources:
+    BlogMetadata:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: blog-metadata-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    BlogContentBucket:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        BucketName: ${env:AWS_S3_CONTENT_BUCKET}
+    BlogAssetsBucket:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        BucketName: ${env:AWS_S3_ASSET_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        OwnershipControls:
+          Rules:
+            - ObjectOwnership: BucketOwnerPreferred
+    LambdaExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: 'sts:AssumeRole'
+        Policies:
+          - PolicyName: BlogLambdaExecutionRole-${opt:stage, 'dev'}
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                # Log management
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: 'arn:aws:logs:${aws:region}:${aws:accountId}:*'
+                # s3 permission
+                - Effect: Allow
+                  Action:
+                    - s3:ListBucket
+                  Resource:
+                    - 'arn:aws:s3:::${env:AWS_S3_CONTENT_BUCKET}'
+                    - 'arn:aws:s3:::${env:AWS_S3_ASSET_BUCKET}'
+                - Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:PutObject
+                    - s3:DeleteObject
+                  Resource:
+                    - 'arn:aws:s3:::${env:AWS_S3_CONTENT_BUCKET}/*'
+                    - 'arn:aws:s3:::${env:AWS_S3_ASSET_BUCKET}/*'
+                # DynamoDB permission
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                  Resource:
+                    - 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/blog-metadata-${sls:stage}'
+                    - 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/blog-metadata-${sls:stage}/index/*'
+    PublicReadPolicyForBucket:
+      Type: 'AWS::S3::BucketPolicy'
+      Properties:
+        Bucket:
+          Ref: BlogAssetsBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: '*'
+              Action:
+                - 's3:GetObject'
+              Resource: 'arn:aws:s3:::${env:AWS_S3_ASSET_BUCKET}/*'
 
 functions:
   main:
     handler: dist/main.handler
+    role: LambdaExecutionRole
     events:
       - http:
           method: ANY
