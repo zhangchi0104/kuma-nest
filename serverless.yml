@@ -8,10 +8,22 @@ provider:
   runtime: nodejs18.x
   region: ap-southeast-2
   profile: blog-${opt:stage, 'dev'}
+  environment:
+    AWS_DYNAMODB_TABLE_NAME: blog-metadata-${sls:stage}
+    AWS_S3_CONTENT_BUCKET: alexz-blog-content-${sls:stage}
+    AWS_S3_ASSETS_BUCKET: alexz-blog-assets-${sls:stage}
+    AWS_DEPLOY_REGION: ap-southeast-2
+    AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID, ""}
+    AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY, ""}
+    RUNTIME_ENV: ${sls:stage}
+custom:
+  includeSecret:
+    dev: true
+    prod: false
 
 plugins:
   - serverless-offline
-  - serverless-dotenv-plugin
+
 resources:
   Resources:
     BlogMetadata:
@@ -108,7 +120,7 @@ resources:
 
 functions:
   main:
-    handler: dist/main.handler
+    handler: dist/main-serverless.handler
     role: LambdaExecutionRole
     events:
       - http:
@@ -124,3 +136,4 @@ package:
     - dist/**
     - '!.git/**'
     - '!test/**'
+    - '!.env*'
