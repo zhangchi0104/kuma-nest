@@ -8,6 +8,7 @@ async function bootstrap() {
     console.log('Running in local dev mode.');
     console.log('============================\n');
   }
+  console.log('Starting server on http://localhost:3000');
   const app = await NestFactory.create(AppModule);
   await app.listen(3000);
 }
