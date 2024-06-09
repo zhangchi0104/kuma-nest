@@ -1,15 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { isRunningLocal } from './utils/utils.helpers';
-
+import { isRunningLocal } from './utils/utils.constants';
+const APP_PORT = process.env.PORT || 8000;
 async function bootstrap() {
   if (isRunningLocal) {
     console.log('============================');
     console.log('Running in local dev mode.');
     console.log('============================\n');
   }
-  console.log('Starting server on http://localhost:3000');
+  console.log('Starting server on http://localhost:' + APP_PORT.toString());
   const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
+  await app.listen(APP_PORT);
 }
 bootstrap();
