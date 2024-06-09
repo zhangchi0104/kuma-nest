@@ -9,13 +9,8 @@ provider:
   region: ap-southeast-2
   profile: blog-${opt:stage, 'dev'}
   environment:
-    AWS_DYNAMODB_TABLE_NAME: blog-metadata-${sls:stage}
-    AWS_S3_CONTENT_BUCKET: alexz-blog-content-${sls:stage}
-    AWS_S3_ASSETS_BUCKET: alexz-blog-assets-${sls:stage}
-    AWS_DEPLOY_REGION: ap-southeast-2
     AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID, ""}
     AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY, ""}
-    RUNTIME_ENV: ${sls:stage}
 custom:
   includeSecret:
     dev: true
@@ -29,7 +24,7 @@ resources:
     BlogMetadata:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: blog-metadata-${sls:stage}
+        TableName: ${env:BLOG_METADATA_TABLE}-${sls:stage}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
@@ -42,11 +37,11 @@ resources:
     BlogContentBucket:
       Type: 'AWS::S3::Bucket'
       Properties:
-        BucketName: ${env:AWS_S3_CONTENT_BUCKET}
+        BucketName: ${env:BLOG_CONTENT_BUCKET}-${sls:stage}
     BlogAssetsBucket:
       Type: 'AWS::S3::Bucket'
       Properties:
-        BucketName: ${env:AWS_S3_ASSET_BUCKET}
+        BucketName: ${env:BLOG_ASSETS_BUCKET}-${sls:stage}
         PublicAccessBlockConfiguration:
           BlockPublicAcls: false
           BlockPublicPolicy: false

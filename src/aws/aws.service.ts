@@ -16,7 +16,7 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import env from 'src/env';
-import { isRunningLocal } from '../utils/utils.helpers';
+import { isRunningLocal } from '../utils/utils.constants';
 @Injectable()
 export class AwsService {
   private s3: S3Client;
@@ -44,9 +44,11 @@ export class AwsService {
 
   async test() {
     const s3ContentBucketTest = await this.testS3Bucket(
-      env.AWS_S3_CONTENT_BUCKET,
+      `${env.BLOG_CONTENT_BUCKET}-${env.SLS_STAGE}`,
     );
-    const assetBucketTest = await this.testS3Bucket(env.AWS_S3_ASSET_BUCKET);
+    const assetBucketTest = await this.testS3Bucket(
+      `${env.BLOG_ASSETS_BUCKET}-${env.SLS_STAGE}`,
+    );
     const dynamoDBTest = await this.testDynamoDB();
     return { ...s3ContentBucketTest, ...assetBucketTest, ...dynamoDBTest };
   }
@@ -102,7 +104,7 @@ export class AwsService {
 
   private async testDynamoDB() {
     const dynamoDb = this.dynamoDb;
-    const tableName = env.AWS_DYNAMODB_TABLE_NAME;
+    const tableName = `${env.BLOG_METADATA_TABLE}-${env.SLS_STAGE}`;
     const id = '1111';
     // DynamoDB:PutItem
     let putDynamoDBResult = 'Success';
