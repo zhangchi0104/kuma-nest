@@ -2,9 +2,13 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { BlogMetadataService } from '../blog-metadata.service';
 import { BlogMetadata } from '../blog-metadata.types';
 import {
+  DeleteCommand,
   DynamoDBDocumentClient,
+  PutCommand,
   ScanCommand,
   ScanCommandInput,
+  UpdateCommand,
+  UpdateCommandInput,
 } from '@aws-sdk/lib-dynamodb';
 import { isRunningLocal } from 'src/utils/utils.constants';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -37,14 +41,26 @@ export class AwsBlogMetadataService extends BlogMetadataService {
   }
 
   async createBlogMetadata(blogMetadata: BlogMetadata): Promise<BlogMetadata> {
-    throw new InternalServerErrorException('Method not implemented.');
+    const putCmd = new PutCommand({
+      TableName: AwsBlogMetadataService.blogMetadataTableName,
+      Item: blogMetadata,
+    });
+    await this.docClient.send(putCmd);
+    return blogMetadata;
   }
 
   async updateBlogMetadata(blogMetadata: BlogMetadata): Promise<BlogMetadata> {
-    throw new InternalServerErrorException('Method not implemented.');
+    const updateCmd = this.prepareUpdateCommand(blogMetadata);
+    await this.docClient.send(updateCmd);
+    return blogMetadata;
   }
+
   async deleteBlogMetadata(id: string): Promise<void> {
-    throw new InternalServerErrorException('Method not implemented.');
+    const removeCmd = new DeleteCommand({
+      Key: { id },
+      TableName: AwsBlogMetadataService.blogMetadataTableName,
+    });
+    await this.docClient.send(removeCmd);
   }
 
   private async prepareQueryCmd(pageSize: number, cursor?: string) {
@@ -61,5 +77,25 @@ export class AwsBlogMetadataService extends BlogMetadataService {
 
   private static get blogMetadataTableName() {
     return `${env.BLOG_METADATA_TABLE}-${env.SLS_STAGE}`;
+  }
+  private prepareUpdateCommand(blogMetadata: BlogMetadata) {
+    let expr = 'Set title=:title, tags=:tags, updatedAtUtc = :updatedAtUtc';
+    const values: UpdateCommandInput['ExpressionAttributeValues'] = {
+      ':title': blogMetadata.title,
+      ':tags': blogMetadata.tags,
+      ':updatedAtUtc': new Date().toISOString(),
+    };
+    if (blogMetadata.description) {
+      expr += ', description=:description';
+      values[':description'] = blogMetadata.description;
+    }
+    return new UpdateCommand({
+      Key: { id: blogMetadata.id },
+      TableName: AwsBlogMetadataService.blogMetadataTableName,
+      UpdateExpression: expr,
+      ExpressionAttributeValues: {
+        values,
+      },
+    });
   }
 }
