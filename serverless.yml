@@ -7,16 +7,44 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: ap-southeast-2
-  profile: blog-${opt:stage, 'dev'}
+  profile: blog-${sls:stage, 'dev'}
   environment:
-    AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID, ""}
-    AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY, ""}
+    BLOG_METADATA_TABLE: ${env:BLOG_METADATA_TABLE}
+    BLOG_CONTENT_BUCKET: ${env:BLOG_CONTENT_BUCKET}
+    BLOG_ASSETS_BUCKET: ${env:BLOG_ASSETS_BUCKET}
+    JWT_PUBLIC_KEY: ${env:JWT_PUBLIC_KEY}
+
 custom:
   includeSecret:
     dev: true
     prod: false
 
+  serverless-offline:
+    printOutput: true
+
+  custom:
+    # customDomain:
+    #   httpProd:
+    #     domainName: api.chiz.dev
+    #     stage: prod
+    #     path: 'v1'
+    #     certificateName: 'api.chiz.dev'
+    #     createRoute53Record: true
+    #     createRoute53IPv6Record: true
+    #     endpointType: REGIONAL
+    #     securityPolicy: tls_1_2
+    #   httpDev:
+    #     domainName: dev.api.chiz.dev
+    #     stage: dev
+    #     basePath: 'v1'
+    #     certificateName: 'dev.api.chiz.dev'
+    #     createRoute53Record: true
+    #     createRoute53IPv6Record: true
+    #     endpointType: REGIONAL
+    #     securityPolicy: tls_1_2
+
 plugins:
+  # - serverless-webpack
   - serverless-offline
 
 resources:
@@ -77,16 +105,16 @@ resources:
                   Action:
                     - s3:ListBucket
                   Resource:
-                    - 'arn:aws:s3:::${env:AWS_S3_CONTENT_BUCKET}'
-                    - 'arn:aws:s3:::${env:AWS_S3_ASSET_BUCKET}'
+                    - 'arn:aws:s3:::${env:BLOG_CONTENT_BUCKET}-${sls:stage}'
+                    - 'arn:aws:s3:::${env:BLOG_ASSETS_BUCKET}-${sls:stage}'
                 - Effect: Allow
                   Action:
                     - s3:GetObject
                     - s3:PutObject
                     - s3:DeleteObject
                   Resource:
-                    - 'arn:aws:s3:::${env:AWS_S3_CONTENT_BUCKET}/*'
-                    - 'arn:aws:s3:::${env:AWS_S3_ASSET_BUCKET}/*'
+                    - 'arn:aws:s3:::${env:BLOG_CONTENT_BUCKET}-${sls:stage}/*'
+                    - 'arn:aws:s3:::${env:BLOG_ASSETS_BUCKET}-${sls:stage}/*'
                 # DynamoDB permission
                 - Effect: Allow
                   Action:
@@ -111,7 +139,7 @@ resources:
               Principal: '*'
               Action:
                 - 's3:GetObject'
-              Resource: 'arn:aws:s3:::${env:AWS_S3_ASSET_BUCKET}/*'
+              Resource: 'arn:aws:s3:::${env:BLOG_ASSETS_BUCKET}-${sls:stage}/*'
 
 functions:
   main:
@@ -127,8 +155,17 @@ functions:
 
 package:
   individually: true
+  excludeDevDependencies: true
   patterns:
+    - 'package.json'
+    - 'yarn.lock'
     - dist/**
+    - "!node_modules/@aws-sdk/**"
+    - "!node_modules/@types/**"
+    - "!node_modules/aws-lambda/**"
+    - "!node_modules/aws-sdk/**"
+    - "!node_modules/.ignored/**"
+    - '!src/**'
     - '!.git/**'
     - '!test/**'
     - '!.env*'
