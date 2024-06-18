@@ -89,7 +89,7 @@ resources:
                     - logs:CreateLogGroup
                     - logs:CreateLogStream
                     - logs:PutLogEvents
-                  Resource: 'arn:aws:logs:${aws:region}:${aws:accountId}:*'
+                  Resource: 'arn:aws:logs:${opt:region}:211125712027:*'
                 # s3 permission
                 - Effect: Allow
                   Action:
@@ -115,8 +115,8 @@ resources:
                     - dynamodb:UpdateItem
                     - dynamodb:DeleteItem
                   Resource:
-                    - 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/blog-metadata-${sls:stage}'
-                    - 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/blog-metadata-${sls:stage}/index/*'
+                    - 'arn:aws:dynamodb:${opt:region}:211125712027:table/blog-metadata-${sls:stage}'
+                    - 'arn:aws:dynamodb:${opt:region}:211125712027:table/blog-metadata-${sls:stage}/index/*'
     PublicReadPolicyForBucket:
       Type: 'AWS::S3::BucketPolicy'
       Properties:
