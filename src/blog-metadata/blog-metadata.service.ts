@@ -4,18 +4,21 @@ import { BlogMetadata } from './blog-metadata.types';
 @Injectable()
 export abstract class BlogMetadataService {
   // CRUD methods for blog metadata
-  async listBlogMetadata(pageSize: number, cursor?: string): Promise<BlogMetadata[]> {
+  async listBlogMetadata(
+    _pageSize: number,
+    _cursor?: string,
+  ): Promise<BlogMetadata[]> {
     throw new Error('Method not implemented.');
   }
 
-  async createBlogMetadata(blogMetadata: BlogMetadata): Promise<BlogMetadata> {
+  async createBlogMetadata(_blogMetadata: BlogMetadata): Promise<BlogMetadata> {
     throw new Error('Method not implemented.');
   }
 
-  async updateBlogMetadata(blogMetadata: BlogMetadata): Promise<BlogMetadata> {
+  async updateBlogMetadata(_blogMetadata: BlogMetadata): Promise<BlogMetadata> {
     throw new Error('Method not implemented.');
   }
-  async deleteBlogMetadata(id: string): Promise<void> {
+  async deleteBlogMetadata(_id: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
 }

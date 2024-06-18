@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BlogMetadataService } from '../blog-metadata.service';
 import { BlogMetadata } from '../blog-metadata.types';
 import {
