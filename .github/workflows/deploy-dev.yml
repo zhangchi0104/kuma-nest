@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - dev 
+  workflow-dispatch:
 
 jobs:
   deploy:
     name: deploy
+    environment: dev
     runs-on: ubuntu-latest
     strategy:
       matrix:
