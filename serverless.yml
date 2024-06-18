@@ -13,7 +13,7 @@ provider:
     BLOG_CONTENT_BUCKET: ${env:BLOG_CONTENT_BUCKET}
     BLOG_ASSETS_BUCKET: ${env:BLOG_ASSETS_BUCKET}
     JWT_PUBLIC_KEY: ${env:JWT_PUBLIC_KEY}
-
+  
 custom:
   includeSecret:
     dev: true
@@ -22,30 +22,20 @@ custom:
   serverless-offline:
     printOutput: true
 
-  custom:
-    # customDomain:
-    #   httpProd:
-    #     domainName: api.chiz.dev
-    #     stage: prod
-    #     path: 'v1'
-    #     certificateName: 'api.chiz.dev'
-    #     createRoute53Record: true
-    #     createRoute53IPv6Record: true
-    #     endpointType: REGIONAL
-    #     securityPolicy: tls_1_2
-    #   httpDev:
-    #     domainName: dev.api.chiz.dev
-    #     stage: dev
-    #     basePath: 'v1'
-    #     certificateName: 'dev.api.chiz.dev'
-    #     createRoute53Record: true
-    #     createRoute53IPv6Record: true
-    #     endpointType: REGIONAL
-    #     securityPolicy: tls_1_2
+  customDomain:
+    domainName: ${sls:stage}.api.chiz.dev
+    basePath: 'v1'
+    certificateName: '*.api.chiz.dev'
+    hostedZoneId: Z05341373E3JETY6N02KR
+    createRoute53Record: true
+    createRoute53IPv6Record: true
+    securityPolicy: tls_1_2
+    endpointType: REGIONAL
 
 plugins:
   # - serverless-webpack
   - serverless-offline
+  - serverless-domain-manager
 
 resources:
   Resources:
