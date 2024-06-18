@@ -134,7 +134,8 @@ resources:
 functions:
   main:
     handler: dist/main-serverless.handler
-    package: dist.zip
+    package:
+      artifact: dist.zip
     role: LambdaExecutionRole
     events:
       - http:
