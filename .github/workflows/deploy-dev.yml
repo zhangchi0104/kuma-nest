@@ -6,12 +6,6 @@ on:
       - dev 
   workflow_dispatch:
 
-env:
-  BLOG_METADATA_TABLE: ${{vars.BLOG_METADATA_TABLE}}
-  BLOG_CONTENT_BUCKET: ${{vars.BLOG_CONTENT_BUCKET}}
-  BLOG_ASSETS_BUCKET: ${{vars.BLOG_ASSETS_BUCKET}}
-  JWT_PUBLIC_KEY: ${{vars.JWT_PUBLIC_KEY}}
-
 jobs:
   deploy:
     name: deploy
@@ -45,4 +39,8 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          BLOG_METADATA_TABLE: ${{vars.BLOG_METADATA_TABLE}}
+          BLOG_CONTENT_BUCKET: ${{vars.BLOG_CONTENT_BUCKET}}
+          BLOG_ASSETS_BUCKET: ${{vars.BLOG_ASSETS_BUCKET}}
+          JWT_PUBLIC_KEY: ${{vars.JWT_PUBLIC_KEY}}
 
