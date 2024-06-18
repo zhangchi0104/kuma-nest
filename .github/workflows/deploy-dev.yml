@@ -36,6 +36,9 @@ jobs:
         run: |
           npm i -g yarn
           yarn install --immutable
+      - name: Bundle with ncc
+        run: |
+          yarn bundle:serverless
       - name: serverless deploy
         run: |
           yarn sls deploy --stage dev --region ap-southeast-2
