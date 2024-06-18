@@ -5,6 +5,11 @@ on:
     branches:
       - dev 
   workflow_dispatch:
+env:
+  BLOG_METADATA_TABLE={{vars.BLOG_METADATA_TABLE}}
+  BLOG_CONTENT_BUCKET={{vars.BLOG_CONTENT_BUCKET}}
+  BLOG_ASSETS_BUCKET={{vars.BLOG_ASSETS_BUCKET}}
+  JWT_PUBLIC_KEY={{vars.JWT_PUBLIC_KEY}}
 
 jobs:
   deploy:
