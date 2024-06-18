@@ -43,3 +43,4 @@ jobs:
           BLOG_CONTENT_BUCKET: ${{vars.BLOG_CONTENT_BUCKET}}
           BLOG_ASSETS_BUCKET: ${{vars.BLOG_ASSETS_BUCKET}}
           JWT_PUBLIC_KEY: ${{vars.JWT_PUBLIC_KEY}}
+          AWS_PROFILE: 'blog-dev'
