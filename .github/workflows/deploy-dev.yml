@@ -36,6 +36,7 @@ jobs:
         run: |
           yarn sls deploy --stage dev --region ap-southeast-2
         env:
+          SERVERLESS_ACCESS_KEY: ${{secrests.SERVERLESS_ACCESS_KEY}}
           BLOG_METADATA_TABLE: ${{vars.BLOG_METADATA_TABLE}}
           BLOG_CONTENT_BUCKET: ${{vars.BLOG_CONTENT_BUCKET}}
           BLOG_ASSETS_BUCKET: ${{vars.BLOG_ASSETS_BUCKET}}
