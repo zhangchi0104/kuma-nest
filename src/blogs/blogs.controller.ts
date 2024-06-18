@@ -4,7 +4,6 @@ import {
   Get,
   Injectable,
   Param,
-  Post,
   Put,
   Query,
   UseGuards,
@@ -52,11 +51,11 @@ export class BlogsController {
     });
   }
 
-  @Post(':id/metadata')
-  @UseGuards(AuthGuard)
-  @UserRole(UserRoles.ADMIN)
-  async updateBlogMetadata(
-    @Param('id') id: string,
-    @Body() blog: UpdateMetadataDto,
-  ) {}
+  //@Post(':id/metadata')
+  //@UseGuards(AuthGuard)
+  //@UserRole(UserRoles.ADMIN)
+  //async updateBlogMetadata(
+  //  @Param('id') id: string,
+  //  @Body() blog: UpdateMetadataDto,
+  //) {}
 }

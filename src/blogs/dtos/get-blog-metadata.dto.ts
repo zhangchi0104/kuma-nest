@@ -1,5 +1,5 @@
-import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsString, Min, Validate } from "class-validator";
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class GetBlogMetadataDto {
   @Type(() => Number)
@@ -11,5 +11,4 @@ export class GetBlogMetadataDto {
   @IsString()
   @IsOptional()
   public readonly cursor?: string;
-
 }

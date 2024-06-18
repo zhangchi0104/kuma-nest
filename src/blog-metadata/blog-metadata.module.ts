@@ -6,9 +6,9 @@ import { AwsBlogMetadataService } from './impls/blog-metadata.service.aws';
   providers: [
     {
       provide: BlogMetadataService,
-      useClass: AwsBlogMetadataService
-    }
-  ]
-  ,exports: [BlogMetadataService]
+      useClass: AwsBlogMetadataService,
+    },
+  ],
+  exports: [BlogMetadataService],
 })
 export class BlogMetadataModule {}
