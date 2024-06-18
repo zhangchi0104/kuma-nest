@@ -32,12 +32,9 @@ jobs:
         run: |
           npm i -g yarn
           yarn install --immutable
-      - name: Setup serverless credentials
-        run: |
-          yarn sls config credentials --provide aws --key ${{secrets.AWS_ACCESS_KEY_ID}} --secret ${{secrets.AWS_SECRET_ACCESS_KEY}} --profile=blog-dev
       - name: serverless deploy
         run: |
-          yarn sls deploy --stage dev
+          yarn sls deploy --stage dev --region ap-southeast-2
         env:
           BLOG_METADATA_TABLE: ${{vars.BLOG_METADATA_TABLE}}
           BLOG_CONTENT_BUCKET: ${{vars.BLOG_CONTENT_BUCKET}}
