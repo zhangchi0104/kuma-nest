@@ -22,9 +22,7 @@ jobs:
           aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
           aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           profile-name: blog-dev
-      - run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile blog-dev
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile blog-dev
+     
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
@@ -34,11 +32,12 @@ jobs:
         run: |
           npm i -g yarn
           yarn install --immutable
-
+      - name: Setup serverless credentials
+      - run: |
+          sls config credentials --provide aws --key ${{secrets.AWS_ACCESS_KEY_ID}} --secret ${{secrets.AWS_SECRET_ACCESS_KEY}} --profile=blog-dev
       - name: serverless deploy
-        uses: serverless/github-action@v3.2
-        with:
-          args: deploy
+        run: |
+          sls deploy --stage dev
         env:
           BLOG_METADATA_TABLE: ${{vars.BLOG_METADATA_TABLE}}
           BLOG_CONTENT_BUCKET: ${{vars.BLOG_CONTENT_BUCKET}}
