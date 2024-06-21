@@ -133,7 +133,7 @@ resources:
 
 functions:
   main:
-    handler: dist/main-serverless.handler
+    handler: dist/index.handler
     package:
       artifact: main.zip
     role: LambdaExecutionRole
