@@ -1,5 +1,7 @@
 locals {
   gateway_name = "blog_main_api-${var.env_name}"
+  domain_name  = "${var.env_name}.api.chiz.dev"
+  subdomain    = "${var.env_name}.api"
 }
 resource "aws_api_gateway_rest_api" "blog_main_gateway" {
   name = local.gateway_name
@@ -90,16 +92,30 @@ resource "aws_lambda_permission" "apigw" {
   source_arn = "${aws_api_gateway_rest_api.blog_main_gateway.execution_arn}/*/*"
 }
 
-# resource "aws_api_gateway_domain_name" "blog_domain" {
-#   domain_name = "${var.env_name}.${var.gateway_domain}"
-#   endpoint_configuration {
-#     types = ["REGIONAL"]
-#   }
-# }
+resource "aws_route53_record" "blog_endpoint_record" {
+  for_each = toset(["A", "AAAA"])
+  zone_id  = aws_route53_zone.api_chiz_dev.zone_id
+  type     = each.key
+  name     = local.domain_name
+  alias {
+    name                   = aws_api_gateway_domain_name.blog_gateway_domain.regional_domain_name
+    zone_id                = aws_api_gateway_domain_name.blog_gateway_domain.regional_zone_id
+    evaluate_target_health = false
+  }
+}
 
-# resource "aws_api_gateway_base_path_mapping" "lambda_domain_mapping" {
-#   api_id = aws_api_gateway_rest_api.blog_main_gateway.id
-#   stage_name = aws_api_gateway_deployment.blog_api_deployment.stage_name
-#   domain_name = aws_api_gateway_domain_name.blog_domain.domain_name
-#   base_path = "v1"
-# }
+resource "aws_api_gateway_domain_name" "blog_gateway_domain" {
+  regional_certificate_arn = aws_acm_certificate.wildcard_api_chiz_dev.arn
+  domain_name              = local.domain_name
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+resource "aws_api_gateway_base_path_mapping" "blog_gateway_mapping" {
+  base_path   = "v1"
+  stage_name = var.env_name
+  api_id      = aws_api_gateway_rest_api.blog_main_gateway.id
+  domain_name = aws_api_gateway_domain_name.blog_gateway_domain.domain_name
+}
+

@@ -34,14 +34,15 @@ resource "aws_lambda_function" "blog_main" {
   filename      = "dist.zip"
   function_name = local.lambda_name
   role          = aws_iam_role.blog_main_exec_role.arn
+  source_code_hash = data.archive_file.lambda.output_base64sha256
   handler       = "dist/index.handler"
   runtime       = "nodejs18.x"
   environment {
     variables = {
-        BLOG_ASSETS_BUCET = local.blog_assets_bucket
-        BLOG_CONTENT_BUCKET = local.blog_content_bucket
-        BLOG_METADATA_TABLE = local.blog_metadata_table
-        JWT_PUBLIC_KEY = var.jwt_public_key
+      BLOG_ASSETS_BUCKET  = local.blog_assets_bucket
+      BLOG_CONTENT_BUCKET = local.blog_content_bucket
+      BLOG_METADATA_TABLE = local.blog_metadata_table
+      JWT_PUBLIC_KEY      = var.jwt_public_key
     }
   }
 }

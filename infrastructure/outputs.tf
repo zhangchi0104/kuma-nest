@@ -33,6 +33,7 @@ output "metadata_table" {
 
 output "api_gateway_url" {
   value = {
-    url = aws_api_gateway_deployment.blog_api_deployment.invoke_url
+    execution_url = aws_api_gateway_deployment.blog_api_deployment.invoke_url
+    custom_domain = aws_api_gateway_domain_name.blog_gateway_domain.domain_name
   }
 }

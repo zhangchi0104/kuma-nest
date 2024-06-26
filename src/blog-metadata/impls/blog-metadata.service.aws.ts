@@ -76,7 +76,7 @@ export class AwsBlogMetadataService extends BlogMetadataService {
   }
 
   private static get blogMetadataTableName() {
-    return `${env.BLOG_METADATA_TABLE}-${env.SLS_STAGE}`;
+    return `${env.BLOG_METADATA_TABLE}`;
   }
   private prepareUpdateCommand(blogMetadata: BlogMetadata) {
     let expr = 'Set title=:title, tags=:tags, updatedAtUtc = :updatedAtUtc';
