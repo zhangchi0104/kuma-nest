@@ -1,9 +1,9 @@
-name: Terraform Plan
+name: Terraform Plan for Production
 
 on:
   pull_request:
     branches:
-      - dev
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
