@@ -11,9 +11,9 @@ export class ProtectedController {
     return { message: 'This is a protected route' };
   }
 
-  @Get('/admin')
-  @UserRole(UserRoles.ADMIN)
-  getAdminProtected() {
-    return { message: 'This is an admin protected route' };
-  }
+  // @Get('/admin')
+  // @UserRole(UserRoles.ADMIN)
+  // getAdminProtected() {
+  //   return { message: 'This is an admin protected route' };
+  // }
 }
