@@ -1,4 +1,4 @@
-ame: terraform-plan
+name: Terraform Plan
 
 on:
   pull_request:
@@ -17,10 +17,6 @@ jobs:
       pull-requests: write
       contents: read
       id-token: write
-
-    defaults:
-      run:
-        working-directory: dev
 
     steps:
       - uses: actions/checkout@v4
