@@ -2,13 +2,15 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-import { AwsService } from './aws/aws.service';
-import { AwsModule } from './aws/aws.module';
 import { AuthModule } from './auth/auth.module';
 import { ProtectedModule } from './protected/protected.module';
+
+import { BlogMetadataModule } from './blog-metadata/blog-metadata.module';
+import { BlogsModule } from './blogs/blogs.module';
+
 @Module({
-  imports: [AwsModule, AuthModule, ProtectedModule],
+  imports: [AuthModule, ProtectedModule, BlogMetadataModule, BlogsModule],
   controllers: [AppController],
-  providers: [AppService, AwsService],
+  providers: [AppService],
 })
 export class AppModule {}
