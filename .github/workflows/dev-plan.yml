@@ -1,4 +1,4 @@
-ame: terraform-plan
+name: Terraform Plan
 
 on:
   pull_request:
