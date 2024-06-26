@@ -1,7 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { UserRoles } from 'src/auth/auth.type';
-import { UserRole } from 'src/auth/decorators/requires-admin.decorator';
 
 @Controller('protected')
 @UseGuards(AuthGuard)
