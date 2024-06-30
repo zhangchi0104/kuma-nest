@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       # - main
+  workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # TODO: find a way to concel previous runs with SIGINT
