@@ -53,3 +53,5 @@ jobs:
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve
+        env:
+          TF_VAR_jwt_public_key: ${{ env.TF_VAR_JWT_PUBLIC_KEY }}
