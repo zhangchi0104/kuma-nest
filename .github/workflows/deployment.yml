@@ -31,7 +31,6 @@ jobs:
           role-to-assume: arn:aws:iam::211125712027:role/BlogDeployment-dev
           role-duration-seconds: 900
           aws-region: ap-southeast-2
-          role-session-name: BlogDeploymentSession-dev
 
       - uses: hashicorp/setup-terraform@v3
       - uses: actions/setup-node@v4
