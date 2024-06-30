@@ -37,3 +37,10 @@ output "api_gateway_url" {
     custom_domain = aws_api_gateway_domain_name.blog_gateway_domain.domain_name
   }
 }
+
+output "deployment_roles" {
+    value = {
+        prod = aws_iam_role.blog_ci["prod"].arn
+        dev = aws_iam_role.blog_ci["dev"].arn
+    }
+}

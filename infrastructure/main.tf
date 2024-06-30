@@ -20,10 +20,6 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-  #   profile = local.aws_profile
-  assume_role {
-    role_arn = aws_iam_role.blog_ci[var.env_name].arn
-  }
 }
 
 

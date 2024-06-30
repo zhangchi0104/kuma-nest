@@ -28,10 +28,23 @@ data "aws_iam_policy_document" "blog_ci" {
     ]
     resources = [
       "arn:aws:apigateway:${var.aws_region}::/restapis/*",
-      "arn:aws:apigateway:${var.aws_region}::/restapis/*/stages/*"
-
+      "arn:aws:apigateway:${var.aws_region}::/restapis/*/stages/*",
+      "arn:aws:apigateway:${var.aws_region}::/domainnames/*.api.chiz.dev"
     ]
+  }
 
+  statement {
+    actions = [
+      "iam:*"
+    ]
+    resources = [
+      "arn:aws:iam::${local.account_id}:role/Blog*",
+      "arn:aws:iam::${local.account_id}:role/blog*",
+      "arn:aws:iam::${local.account_id}:role/lambda*",
+      "arn:aws:iam::${local.account_id}:policy/blog*",
+      "arn:aws:iam::${local.account_id}:policy/Blog*",
+      "arn:aws:iam::${local.account_id}:policy/lambda*"
+    ]
   }
 }
 
@@ -64,12 +77,28 @@ resource "aws_iam_role" "blog_ci" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # Allowing github actions to assume this role
       {
-        Action = "sts:AssumeRole"
+        Action = "sts:AssumeRoleWithWebIdentity",
         Effect = "Allow"
         Sid    = ""
         Principal = {
-          AWS = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.github_token_domain}"
+        }
+        Condition = {
+          StringEquals = {
+            "${local.github_token_domain}:sub" = "repo:zhangchi0104/kuma-nest:ref:refs/heads/${var.env_name == "prod" ? "main" : var.env_name}"
+            "${local.github_token_domain}:aud" : "${local.audience}"
+          }
+        }
+      },
+      # Allowing the account root user to assume this role
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Sid    = "",
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         }
       }
     ]
