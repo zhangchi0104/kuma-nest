@@ -42,6 +42,7 @@ resource "aws_iam_role" "blog_main_exec_role" {
   })
 }
 
+
 data "aws_iam_policy_document" "blog_lambda_policy" {
   statement {
     effect = "Allow"

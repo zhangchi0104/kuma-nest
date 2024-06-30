@@ -21,6 +21,9 @@ terraform {
 provider "aws" {
   region = var.aws_region
   #   profile = local.aws_profile
+  assume_role {
+    role_arn = aws_iam_role.blog_ci[var.env_name].arn
+  }
 }
 
 
@@ -31,12 +34,12 @@ data "archive_file" "lambda" {
 }
 
 resource "aws_lambda_function" "blog_main" {
-  filename      = "dist.zip"
-  function_name = local.lambda_name
-  role          = aws_iam_role.blog_main_exec_role.arn
+  filename         = "dist.zip"
+  function_name    = local.lambda_name
+  role             = aws_iam_role.blog_main_exec_role.arn
   source_code_hash = data.archive_file.lambda.output_base64sha256
-  handler       = "dist/index.handler"
-  runtime       = "nodejs18.x"
+  handler          = "dist/index.handler"
+  runtime          = "nodejs18.x"
   environment {
     variables = {
       BLOG_ASSETS_BUCKET  = local.blog_assets_bucket

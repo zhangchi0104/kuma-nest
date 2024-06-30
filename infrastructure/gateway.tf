@@ -114,7 +114,7 @@ resource "aws_api_gateway_domain_name" "blog_gateway_domain" {
 
 resource "aws_api_gateway_base_path_mapping" "blog_gateway_mapping" {
   base_path   = "v1"
-  stage_name = var.env_name
+  stage_name  = var.env_name
   api_id      = aws_api_gateway_rest_api.blog_main_gateway.id
   domain_name = aws_api_gateway_domain_name.blog_gateway_domain.domain_name
 }
