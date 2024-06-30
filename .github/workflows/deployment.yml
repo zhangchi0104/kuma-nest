@@ -12,7 +12,8 @@ concurrency:
 jobs:
   apply:
     # environment: dev
-    env: TF_LOG=DEBUG
+    env:
+      TF_LOG: DEBUG
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
