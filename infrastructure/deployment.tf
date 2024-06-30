@@ -103,8 +103,10 @@ resource "aws_iam_role" "blog_ci" {
         }
         Condition = {
           StringEquals = {
-            "${local.github_token_domain}:sub" = "repo:zhangchi0104/kuma-nest:ref:refs/heads/${var.env_name == "prod" ? "main" : var.env_name}"
             "${local.github_token_domain}:aud" : "${local.audience}"
+          }
+          StringLike = {
+            "${local.github_token_domain}:sub" = "repo:zhangchi0104/kuma-nest:environment:${var.env_name == "prod" ? "main" : var.env_name}"
           }
         }
       },

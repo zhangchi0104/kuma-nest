@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   apply:
-    # environment: dev
+    environment: dev
     env:
       TF_LOG: DEBUG
     timeout-minutes: 10
