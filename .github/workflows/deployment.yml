@@ -3,8 +3,7 @@ name: Terraform Apply
 on:
   push:
     branches:
-      - dev
-      - main
+      - devå
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,7 +27,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           # TODO: this should be from terraform
-          role-to-assume: arn:aws:iam::211125712027:role/BlogDeployment-${{ env.STAGE_NAME }}
+          role-to-assume: arn:aws:iam::211125712027:role/BlogDeployment-dev
           aws-region: ap-southeast-2
       - uses: hashicorp/setup-terraform@v3
 
