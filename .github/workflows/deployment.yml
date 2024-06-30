@@ -3,7 +3,7 @@ name: Terraform Apply
 on:
   push:
     branches:
-      - devå
+      - dev
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
