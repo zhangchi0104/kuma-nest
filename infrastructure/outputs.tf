@@ -39,8 +39,8 @@ output "api_gateway_url" {
 }
 
 output "deployment_roles" {
-    value = {
-        prod = aws_iam_role.blog_ci["prod"].arn
-        dev = aws_iam_role.blog_ci["dev"].arn
-    }
+  value = {
+    prod = aws_iam_role.blog_ci["prod"].arn
+    dev  = aws_iam_role.blog_ci["dev"].arn
+  }
 }

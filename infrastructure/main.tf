@@ -20,10 +20,23 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+    assume_role {
+      role_arn = "arn:aws:iam::211125712027:role/BlogDeployment-dev"
+    }
 }
 
+resource "null_resource" "build_backend" {
+  triggers = {
+    bundle_hash = data.archive_file.lambda.output_base64sha256
+  }
+
+  provisioner "local-exec" {
+    command = "yarn build:serverless"
+  }
+}
 
 data "archive_file" "lambda" {
+
   type        = "zip"
   output_path = "dist.zip"
   source_dir  = "../dist"

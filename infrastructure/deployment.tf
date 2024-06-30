@@ -29,13 +29,24 @@ data "aws_iam_policy_document" "blog_ci" {
     resources = [
       "arn:aws:apigateway:${var.aws_region}::/restapis/*",
       "arn:aws:apigateway:${var.aws_region}::/restapis/*/stages/*",
-      "arn:aws:apigateway:${var.aws_region}::/domainnames/*.api.chiz.dev"
+      "arn:aws:apigateway:${var.aws_region}::/domainnames/*.api.chiz.dev",
+      "arn:aws:apigateway:${var.aws_region}::/domainnames/*.api.chiz.dev/*"
     ]
   }
 
   statement {
     actions = [
-      "iam:*"
+      "iam:CreateRole",
+      "iam:CreateOpenIDConnectProvider",
+      "iam:DeleteRole",
+      "iam:DeleteOpenIDConnectProvider",
+      "iam:AttachRolePolicy",
+      "iam:CreateRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:PutRolePolicy",
     ]
     resources = [
       "arn:aws:iam::${local.account_id}:role/Blog*",
@@ -53,6 +64,11 @@ resource "aws_iam_policy" "blog_ci" {
   name        = "BlogDeployment-${each.value}"
   description = "Policy for Blog Deployment CI/CD"
   policy      = data.aws_iam_policy_document.blog_ci[each.key].json
+}
+
+data "aws_iam_policy" "managed_iam_read_only" {
+  provider = aws
+  name     = "IAMReadOnlyAccess"
 }
 
 data "aws_iam_policy" "managed_route53_admin" {
@@ -128,4 +144,10 @@ resource "aws_iam_role_policy_attachment" "blog_ci_resources" {
   for_each   = toset(["dev", "prod"])
   role       = aws_iam_role.blog_ci[each.key].name
   policy_arn = aws_iam_policy.blog_ci[each.key].arn
+}
+
+resource "aws_iam_role_policy_attachment" "blog_ci_iam_read_only" {
+  for_each   = toset(["dev", "prod"])
+  role       = aws_iam_role.blog_ci[each.key].name
+  policy_arn = data.aws_iam_policy.managed_iam_read_only.arn
 }
