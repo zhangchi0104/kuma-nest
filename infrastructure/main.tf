@@ -16,6 +16,12 @@ terraform {
       version = "~> 4.16"
     }
   }
+  backend "s3" {
+    bucket = "terraform-state-blog-alexz"
+    dynamodb_table = "terraform-state-lock-blog-alexz"
+    key    = "blog-alexz"
+    region = "ap-southeast-2"
+  }
 }
 
 provider "aws" {

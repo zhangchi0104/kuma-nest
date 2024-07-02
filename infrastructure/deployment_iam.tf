@@ -1,3 +1,7 @@
+locals {
+    state_key = "blog-alexz"
+    state_dynamodb = "terraform-state-lock-blog-alexz"
+}
 data "aws_iam_policy_document" "blog_ci" {
   for_each = toset(["dev", "prod"])
   statement {
@@ -57,6 +61,38 @@ data "aws_iam_policy_document" "blog_ci" {
       "arn:aws:iam::${local.account_id}:policy/lambda*"
     ]
   }
+}
+
+data "aws_iam_policy_document" "tf_state" {
+    statement {
+    actions = [
+      "s3:ListBucket",    
+    ]
+    resources = [
+      aws_s3_bucket.tf_state.arn,
+    ]
+    }
+    statement {
+        actions = [
+            "s3:GetObject",
+            "s3:PutObject",
+        ]
+        resources = [
+            "${aws_s3_bucket.tf_state.arn}/${local.state_key}/*",
+        ]   
+    }
+    statement {
+      actions = [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+      ]
+      resources = [
+        "arn:aws:dynamodb:*:*:table/${local.state_dynamodb}"
+      ]
+    }
+  
 }
 
 resource "aws_iam_policy" "blog_ci" {
