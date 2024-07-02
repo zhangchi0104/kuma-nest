@@ -87,6 +87,7 @@ data "aws_iam_policy_document" "tf_state" {
       "dynamodb:GetItem",
       "dynamodb:DeleteItem",
       "dynamodb:DescribeTable",
+      "dynamodb:DescribeContinuousBackups",
     ]
     resources = [
       "arn:aws:dynamodb:*:*:table/${local.state_dynamodb}"
