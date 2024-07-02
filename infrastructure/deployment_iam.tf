@@ -66,8 +66,9 @@ data "aws_iam_policy_document" "blog_ci" {
 data "aws_iam_policy_document" "tf_state" {
   statement {
     actions = [
-      "s3:ListBucket",
-      "s3:GetBucketPolicy",
+      "s3:List*",
+      "s3:Get*",
+      "s3:Describe*"
     ]
     resources = [
       aws_s3_bucket.tf_state.arn,
@@ -89,7 +90,8 @@ data "aws_iam_policy_document" "tf_state" {
       "dynamodb:DeleteItem",
       "dynamodb:DescribeTable",
       "dynamodb:DescribeContinuousBackups",
-      "dynamodb:DescribeTimeToLive"
+      "dynamodb:DescribeTimeToLive",
+      "dynamodb:ListTagsOfResource",
     ]
     resources = [
       "arn:aws:dynamodb:*:*:table/${local.state_dynamodb}"
