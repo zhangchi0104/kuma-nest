@@ -78,7 +78,7 @@ data "aws_iam_policy_document" "tf_state" {
       "s3:PutObject",
     ]
     resources = [
-      "${aws_s3_bucket.tf_state.arn}/${local.state_key}/*",
+      "${aws_s3_bucket.tf_state.arn}/${local.state_key}",
     ]
   }
   statement {
