@@ -1,6 +1,6 @@
 locals {
-    state_key = "blog-alexz"
-    state_dynamodb = "terraform-state-lock-blog-alexz"
+  state_key      = "blog-alexz"
+  state_dynamodb = "terraform-state-lock-blog-alexz"
 }
 data "aws_iam_policy_document" "blog_ci" {
   for_each = toset(["dev", "prod"])
@@ -64,35 +64,35 @@ data "aws_iam_policy_document" "blog_ci" {
 }
 
 data "aws_iam_policy_document" "tf_state" {
-    statement {
+  statement {
     actions = [
-      "s3:ListBucket",    
+      "s3:ListBucket",
     ]
     resources = [
       aws_s3_bucket.tf_state.arn,
     ]
-    }
-    statement {
-        actions = [
-            "s3:GetObject",
-            "s3:PutObject",
-        ]
-        resources = [
-            "${aws_s3_bucket.tf_state.arn}/${local.state_key}/*",
-        ]   
-    }
-    statement {
-      actions = [
-        "dynamodb:PutItem",
-        "dynamodb:GetItem",
-        "dynamodb:DeleteItem",
-        "dynamodb:DescribeTable",
-      ]
-      resources = [
-        "arn:aws:dynamodb:*:*:table/${local.state_dynamodb}"
-      ]
-    }
-  
+  }
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+    ]
+    resources = [
+      "${aws_s3_bucket.tf_state.arn}/${local.state_key}/*",
+    ]
+  }
+  statement {
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:GetItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable",
+    ]
+    resources = [
+      "arn:aws:dynamodb:*:*:table/${local.state_dynamodb}"
+    ]
+  }
+
 }
 
 resource "aws_iam_policy" "blog_ci" {
@@ -100,6 +100,11 @@ resource "aws_iam_policy" "blog_ci" {
   name        = "BlogDeployment-${each.value}"
   description = "Policy for Blog Deployment CI/CD"
   policy      = data.aws_iam_policy_document.blog_ci[each.key].json
+}
+resource "aws_iam_policy" "tf_state" {
+  name        = "TerraformBlogStatePolicy"
+  description = "Policy for Terraform state"
+  policy      = data.aws_iam_policy_document.tf_state.json
 }
 
 data "aws_iam_policy" "managed_iam_read_only" {
@@ -188,4 +193,10 @@ resource "aws_iam_role_policy_attachment" "blog_ci_iam_read_only" {
   for_each   = toset(["dev", "prod"])
   role       = aws_iam_role.blog_ci[each.key].name
   policy_arn = data.aws_iam_policy.managed_iam_read_only.arn
+}
+
+resource "aws_iam_role_policy_attachment" "blog_tf_state" {
+  for_each   = toset(["dev", "prod"])
+  role       = aws_iam_role.blog_ci[each.key].name
+  policy_arn = aws_iam_policy.tf_state.arn
 }

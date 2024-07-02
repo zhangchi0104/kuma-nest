@@ -17,10 +17,10 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "terraform-state-blog-alexz"
+    bucket         = "terraform-state-blog-alexz"
     dynamodb_table = "terraform-state-lock-blog-alexz"
-    key    = "blog-alexz"
-    region = "ap-southeast-2"
+    key            = "blog-alexz"
+    region         = "ap-southeast-2"
   }
 }
 

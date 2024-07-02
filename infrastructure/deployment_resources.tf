@@ -3,9 +3,9 @@ resource "aws_s3_bucket" "tf_state" {
 }
 
 resource "aws_dynamodb_table" "tf_state" {
-  name           = local.state_dynamodb
-  hash_key       = "LockID"
-  billing_mode   = "PAY_PER_REQUEST"
+  name         = local.state_dynamodb
+  hash_key     = "LockID"
+  billing_mode = "PAY_PER_REQUEST"
   attribute {
     name = "LockID"
     type = "S"
