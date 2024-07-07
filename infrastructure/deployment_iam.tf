@@ -45,7 +45,6 @@ data "aws_iam_policy_document" "blog_ci" {
       "iam:DeleteRole",
       "iam:DeleteOpenIDConnectProvider",
       "iam:AttachRolePolicy",
-      "iam:CreateRolePolicy",
       "iam:DeleteRolePolicy",
       "iam:DetachRolePolicy",
       "iam:CreatePolicy",
@@ -205,3 +204,4 @@ resource "aws_iam_role_policy_attachment" "blog_tf_state" {
   role       = aws_iam_role.blog_ci[each.key].name
   policy_arn = aws_iam_policy.tf_state.arn
 }
+

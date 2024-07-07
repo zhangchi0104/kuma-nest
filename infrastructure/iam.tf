@@ -81,6 +81,7 @@ data "aws_iam_policy_document" "blog_lambda_policy" {
       "dynamodb:Get*",
       "dynamodb:Query*",
       "dynamodb:Scan*",
+      "dynamodb:Update*",
     ]
     resources = [
       aws_dynamodb_table.blog_metadata.arn,
