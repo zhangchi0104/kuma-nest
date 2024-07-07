@@ -49,28 +49,50 @@ data "aws_iam_policy_document" "blog_lambda_policy" {
       aws_s3_bucket.blog_content_bucket.arn
     ]
   }
-
   statement {
     effect = "Allow"
     actions = [
-      "s3:GetObject",
+      "s3:Get*",
+      "s3:List*"
+    ]
+    resources = [
+      aws_s3_bucket.blog_assets_bucket.arn,
+      aws_s3_bucket.blog_content_bucket.arn,
+      "${aws_s3_bucket.blog_assets_bucket.arn}/*",
+      "${aws_s3_bucket.blog_content_bucket.arn}/*",
+    ]
+
+  }
+  statement {
+    effect = "Allow"
+    actions = [
       "s3:PutObject",
       "s3:DeleteObject",
     ]
     resources = [
       aws_s3_bucket.blog_assets_bucket.arn,
-      aws_s3_bucket.blog_content_bucket.arn
+      aws_s3_bucket.blog_content_bucket.arn,
+      "${aws_s3_bucket.blog_assets_bucket.arn}/*",
+      "${aws_s3_bucket.blog_content_bucket.arn}/*",
     ]
+  }
+  statement {
+    actions = [
+      "dynamodb:Get*",
+      "dynamodb:Query*",
+      "dynamodb:Scan*",
+    ]
+    resources = [
+      aws_dynamodb_table.blog_metadata.arn,
+    ]
+    effect = "Allow"
   }
 
   statement {
     effect = "Allow"
     actions = [
-      "dynamodb:GetItem",
       "dynamodb:PutItem",
       "dynamodb:DeleteItem",
-      "dynamodb:Scan",
-      "dynamodb:Query",
     ]
     resources = [
       aws_dynamodb_table.blog_metadata.arn
