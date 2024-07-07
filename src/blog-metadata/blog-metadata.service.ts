@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { BlogMetadata } from './blog-metadata.types';
 
+export type UpdateBlogMetadata = Partial<
+  Omit<BlogMetadata, 'updatedAtUtc' | 'PostId'> & { PostId: string }
+>;
 @Injectable()
 export abstract class BlogMetadataService {
   // CRUD methods for blog metadata
@@ -15,10 +18,20 @@ export abstract class BlogMetadataService {
     throw new Error('Method not implemented.');
   }
 
-  async updateBlogMetadata(_blogMetadata: BlogMetadata): Promise<BlogMetadata> {
+  async updateBlogMetadata(_blogMetadata: UpdateBlogMetadata): Promise<void> {
     throw new Error('Method not implemented.');
   }
-  async deleteBlogMetadata(_id: string): Promise<void> {
+  async deleteBlogMetadata(
+    _id: string,
+    _immediately: boolean = false,
+  ): Promise<void> {
     throw new Error('Method not implemented.');
+  }
+
+  async deleteBlogMetadataIfExists(_id: string): Promise<void> {
+    throw new Error('deleteBloMetadataIfExists not implemented.');
+  }
+  async checkBlogMetadataExists(_id: string): Promise<boolean> {
+    throw new Error('checkBlogMetadataExists not implemented.');
   }
 }

@@ -1,25 +1,41 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
+  HttpException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   Param,
   Put,
   Query,
+  UseFilters,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { GetBlogMetadataDto } from './dtos/get-blog-metadata.dto';
-import { CreateMetadataDto } from './dtos/create-metadata.dto';
 import { BlogMetadataService } from 'src/blog-metadata/blog-metadata.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UserRole } from 'src/auth/decorators/requires-admin.decorator';
 import { UserRoles } from 'src/auth/auth.type';
+import { BlogContentService } from 'src/blog-content/blog-content.service';
+import { CreateBlogDto } from './dtos/create-blog.dto';
+
+import { S3ServiceExceptionFilter } from 'src/filters/s3-service-exception.filter';
 
 @Controller('blogs')
+@UseFilters(S3ServiceExceptionFilter)
 @Injectable()
 export class BlogsController {
-  constructor(private readonly metadataService: BlogMetadataService) {}
+  private logger: Logger;
+  constructor(
+    private readonly metadataService: BlogMetadataService,
+    private readonly contentService: BlogContentService,
+  ) {
+    this.logger = new Logger(BlogsController.name);
+  }
   @Get() // GET /blogs
   async getBlogs(
     @Query(
@@ -34,28 +50,60 @@ export class BlogsController {
     return await this.metadataService.listBlogMetadata(pageSize ?? 10, cursor);
   }
 
-  @Put(':id/metadata') //   PUT /blogs/:id/metadata
-  @UseGuards(AuthGuard)
-  @UserRole(UserRoles.ADMIN)
-  async createBlogMetadata(
-    @Param('id') id: string,
-    @Body() blog: CreateMetadataDto,
-  ) {
-    const { title, description, tags, createdAt } = blog;
-    return await this.metadataService.createBlogMetadata({
-      id,
-      title,
-      description,
-      tags,
-      publishedAtUtc: createdAt,
-    });
+  @Get(':id')
+  async getBlogById(@Param('id') id: string) {
+    return await this.contentService.getBlog(id);
   }
 
-  //@Post(':id/metadata')
+  @Put(':id')
+  @UseGuards(AuthGuard)
+  @UserRole(UserRoles.ADMIN)
+  async createBlog(@Param('id') id: string, @Body() body: CreateBlogDto) {
+    if (await this.metadataService.checkBlogMetadataExists(id)) {
+      throw new BadRequestException({
+        message: 'Blog already exists',
+        data: { id },
+      });
+    }
+    try {
+      const { content, metadata } = body;
+      const { title, description, tags, createdAt } = metadata;
+      await Promise.all([
+        this.metadataService.createBlogMetadata({
+          PostId: id,
+          title,
+          description,
+          tags,
+          publishedAtUtc: createdAt,
+          isDeleted: false,
+        }),
+        this.contentService.createBlog(id, content),
+      ]);
+      return id;
+    } catch (e) {
+      console.error(e);
+      if (e instanceof HttpException) {
+        throw e;
+      }
+      await this.metadataService.deleteBlogMetadata(id).catch(() => {});
+      await this.contentService.deleteBlog(id).catch(() => {});
+      throw new InternalServerErrorException({
+        message: 'Failed to create blog',
+        data: { id },
+        error: e,
+      });
+    }
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  @UserRole(UserRoles.ADMIN)
+  async deleteBlog(@Param('id') id: string) {
+    await this.metadataService.deleteBlogMetadata(id);
+  }
+
+  //@Delete(':id')
   //@UseGuards(AuthGuard)
   //@UserRole(UserRoles.ADMIN)
-  //async updateBlogMetadata(
-  //  @Param('id') id: string,
-  //  @Body() blog: UpdateMetadataDto,
-  //) {}
+  //async updateBlog(@Param(':id') id: string, dto: DeleteBlogDto) {}
 }

@@ -8,7 +8,11 @@ let server: Handler | null = null;
 
 async function bootstrap(): Promise<Handler> {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  );
   await app.init();
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });

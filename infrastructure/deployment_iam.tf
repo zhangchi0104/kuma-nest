@@ -50,6 +50,7 @@ data "aws_iam_policy_document" "blog_ci" {
       "iam:CreatePolicy",
       "iam:DeletePolicy",
       "iam:PutRolePolicy",
+      "iam:CreatePolicyVersion",
     ]
     resources = [
       "arn:aws:iam::${local.account_id}:role/Blog*",

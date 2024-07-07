@@ -7,9 +7,16 @@ import { ProtectedModule } from './protected/protected.module';
 
 import { BlogMetadataModule } from './blog-metadata/blog-metadata.module';
 import { BlogsModule } from './blogs/blogs.module';
+import { BlogContentModule } from './blog-content/blog-content.module';
 
 @Module({
-  imports: [AuthModule, ProtectedModule, BlogMetadataModule, BlogsModule],
+  imports: [
+    AuthModule,
+    ProtectedModule,
+    BlogMetadataModule,
+    BlogsModule,
+    BlogContentModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

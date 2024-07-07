@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { BlogMetadataService } from '../blog-metadata.service';
+import {
+  BlogMetadataService,
+  UpdateBlogMetadata,
+} from '../blog-metadata.service';
 import { BlogMetadata } from '../blog-metadata.types';
 import {
   DeleteCommand,
@@ -8,12 +11,12 @@ import {
   ScanCommand,
   ScanCommandInput,
   UpdateCommand,
+  QueryCommand,
   UpdateCommandInput,
 } from '@aws-sdk/lib-dynamodb';
 import { isRunningLocal } from 'src/utils/utils.constants';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import env from 'src/env';
-
 @Injectable()
 export class AwsBlogMetadataService extends BlogMetadataService {
   docClient: DynamoDBDocumentClient;
@@ -49,18 +52,45 @@ export class AwsBlogMetadataService extends BlogMetadataService {
     return blogMetadata;
   }
 
-  async updateBlogMetadata(blogMetadata: BlogMetadata): Promise<BlogMetadata> {
+  async updateBlogMetadata(blogMetadata: UpdateBlogMetadata): Promise<void> {
     const updateCmd = this.prepareUpdateCommand(blogMetadata);
     await this.docClient.send(updateCmd);
-    return blogMetadata;
   }
 
-  async deleteBlogMetadata(id: string): Promise<void> {
+  async deleteBlogMetadata(
+    id: string,
+    immediately: boolean = false,
+  ): Promise<void> {
+    if (!immediately) {
+      await this.updateBlogMetadata({ PostId: id, isDeleted: true });
+      return;
+    }
     const removeCmd = new DeleteCommand({
       Key: { id },
       TableName: AwsBlogMetadataService.blogMetadataTableName,
     });
     await this.docClient.send(removeCmd);
+  }
+
+  async deleteMetadataIfExists(id: string): Promise<void> {
+    if (await this.checkBlogMetadataExists(id)) {
+      await this.deleteBlogMetadata(id);
+    }
+  }
+
+  async checkBlogMetadataExists(id: string): Promise<boolean> {
+    const queryCmd = new QueryCommand({
+      KeyConditionExpression: '#PK = :id',
+      TableName: AwsBlogMetadataService.blogMetadataTableName,
+      ExpressionAttributeValues: {
+        ':id': id,
+      },
+      ExpressionAttributeNames: {
+        '#PK': 'PostId',
+      },
+    });
+    const result = await this.docClient.send(queryCmd);
+    return result.Count ? result.Count > 0 : false;
   }
 
   private async prepareQueryCmd(pageSize: number, cursor?: string) {
@@ -78,24 +108,27 @@ export class AwsBlogMetadataService extends BlogMetadataService {
   private static get blogMetadataTableName() {
     return `${env.BLOG_METADATA_TABLE}`;
   }
-  private prepareUpdateCommand(blogMetadata: BlogMetadata) {
-    let expr = 'Set title=:title, tags=:tags, updatedAtUtc = :updatedAtUtc';
+  private prepareUpdateCommand(blogMetadata: UpdateBlogMetadata) {
+    let expr = 'Set updatedAtUtc = :updatedAtUtc';
     const values: UpdateCommandInput['ExpressionAttributeValues'] = {
-      ':title': blogMetadata.title,
-      ':tags': blogMetadata.tags,
       ':updatedAtUtc': new Date().toISOString(),
     };
+    for (const [key, val] of Object.entries(blogMetadata)) {
+      if (key === 'updatedAtUtc' || key === 'PostId' || val === undefined) {
+        continue;
+      }
+      expr += `, ${key}=:${key}`;
+      values[`:${key}`] = val;
+    }
     if (blogMetadata.description) {
       expr += ', description=:description';
       values[':description'] = blogMetadata.description;
     }
     return new UpdateCommand({
-      Key: { id: blogMetadata.id },
+      Key: { PostId: blogMetadata.PostId },
       TableName: AwsBlogMetadataService.blogMetadataTableName,
       UpdateExpression: expr,
-      ExpressionAttributeValues: {
-        values,
-      },
+      ExpressionAttributeValues: values,
     });
   }
 }

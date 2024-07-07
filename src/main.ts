@@ -11,7 +11,11 @@ async function bootstrap() {
   }
   console.log('Starting server on http://localhost:' + APP_PORT.toString());
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  );
   await app.listen(APP_PORT);
 }
 bootstrap();

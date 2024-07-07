@@ -36,9 +36,8 @@ export class AuthGuard implements CanActivate {
       if (requiredRole && (!payload.role || requiredRole > payload.role)) {
         throw new ForbiddenException();
       }
-
-      console.log(payload);
     } catch (error) {
+      console.error(error);
       if (error instanceof ForbiddenException) {
         throw error;
       }
