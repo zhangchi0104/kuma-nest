@@ -15,7 +15,9 @@ const env = cleanEnv(process.env, {
   SLS_STAGE: str({
     default: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
   }),
-  JWT_PUBLIC_KEY: str(),
+  JWT_PUBLIC_KEY: str({
+    default: '',
+  }),
 });
 
 export default env;
