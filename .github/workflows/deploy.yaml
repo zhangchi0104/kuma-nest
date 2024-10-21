@@ -11,7 +11,7 @@ concurrency:
 
 env:
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
-  NODE_ENV: development
+  NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
 jobs:
   deploy:
