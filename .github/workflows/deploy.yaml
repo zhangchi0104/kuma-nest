@@ -24,10 +24,13 @@ jobs:
     steps:
       # checkout code
       - name: Checkout
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
       # Setup pnpm
       - name: Setup pnpm
-      - uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v4
+
+      - name: Setup node
+        uses: actions/setup-node@4
       # Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -43,6 +46,7 @@ jobs:
       # Bootstrap CDK
       - name: Bootstrap CDK
         run: npx cdk bootstrap
+
       - name: Deploy
         run: npx cdk deploy --require-approval never
       
