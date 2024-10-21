@@ -51,4 +51,5 @@ jobs:
 
       - name: Deploy
         run: npx cdk deploy --require-approval never
-      
+        env:
+          JWT_PUBLIC_KEY: ${{ vars.JWT_PUBLIC_KEY }}
