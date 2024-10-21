@@ -1,0 +1,61 @@
+name: "cdk diff"
+
+on:
+  pull_request:
+    branches: ['main', 'dev']
+
+jobs:
+  build:
+    name: Run CDK diff
+    environment: ${{ GITHUB_BASE_REF == main && 'prod' || 'dev' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Install dependencies
+        run: pnpm install
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-southeast-2
+      - name: Run cdk synth
+        run: npx cdk synth
+      - name: Run cdk diff
+        id: cdkDiff
+        run: npx cdk diff --ci  --no-color
+
+      - name: Write Content TO PR
+        uses: actions/github-script@v7
+        env:
+          PLAN: '${{ steps.plan.cdkDiff.stdout }}'
+          RUN_ENV: ${{ GITHUB_BASE_REF == main && 'prod' || 'dev' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 1. Prepare format of the comment
+            const output = `#### Environment: ${{ process.env.RUN_ENV }}
+
+            #### cdk diff 📖
+
+            <details><summary>Show DIFF</summary>
+
+            \`\`\`
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>`;
+
+            // 2. Create a new one
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output,
+            })

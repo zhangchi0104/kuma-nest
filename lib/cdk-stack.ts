@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import path from 'path';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 interface LambdaProps {
   contentBucket: cdk.aws_s3.Bucket;
@@ -39,6 +38,7 @@ export class CdkStack extends cdk.Stack {
           name: 'id',
           type: cdk.aws_dynamodb.AttributeType.STRING,
         },
+        tags: [new cdk.Tag('env', envName), new cdk.Tag('stack', 'blog')],
       },
     );
     this.createLambda({
@@ -46,7 +46,7 @@ export class CdkStack extends cdk.Stack {
       assetsBucket: assetsBucket,
       matedataTable: metadataTable,
     });
-
+    this.applyTags();
     new cdk.CfnOutput(this, 'ContentBucketOutput', {
       key: 'ContentBucketName',
       value: contentBucket.bucketName,
@@ -84,6 +84,7 @@ export class CdkStack extends cdk.Stack {
         BLOG_ASSETS_BUCKET: props.assetsBucket.bucketName,
         JWT_PUBLIC_KEY: process.env.CLERK_PUBLIC_KEY || '',
       },
+      functionName: `BlogLambda-${this.envName}`,
     });
     //const dockerfilePath = path.join(__dirname, '..');
     //const lambda = new cdk.aws_lambda.DockerImageFunction(this, 'BlogLambda', {
@@ -111,6 +112,7 @@ export class CdkStack extends cdk.Stack {
       this,
       'BlogApiGateway',
       {
+        restApiName: `BlogApiGateway-${this.envName}`,
         handler: lambda,
         proxy: true,
         domainName: {
@@ -143,7 +145,27 @@ export class CdkStack extends cdk.Stack {
       key: 'ApiGatewayUrl',
       value: apiGateway.url,
     });
+    new cdk.CfnOutput(this, 'ApiGatewayArnOutput', {
+      key: 'ApiGatewayArn',
+      value: apiGateway.restApiRootResourceId,
+    });
     return lambda;
+  }
+
+  private applyTags() {
+    const tags = [
+      { key: 'Environment', value: this.envName },
+      { key: 'ResourceGroup', value: 'blog' },
+      { key: 'Owner', value: this.stackName },
+    ];
+    tags.forEach((tag) => {
+      cdk.Tags.of(this).add(tag.key, tag.value, {
+        excludeResourceTypes: [
+          'AWS::Route53::HostedZone',
+          'AWS::CertificateManager::Certificate',
+        ],
+      });
+    });
   }
   private get envName() {
     return process.env.NODE_ENV && process.env.NODE_ENV === 'production'

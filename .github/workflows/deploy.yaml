@@ -1,0 +1,48 @@
+name: Deploy Blog
+run-name: "Deploy to ${{github.ref == 'ref/heads/main' && 'Production' || 'Development' }} Environment"
+on:
+  push:
+    branches:
+      - "dev"
+      - "main"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
+  NODE_ENV: development
+
+jobs:
+  deploy:
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      # checkout code
+      - name: Checkout
+      - uses: actions/checkout@v4
+      # Setup pnpm
+      - name: Setup pnpm
+      - uses: pnpm/action-setup@v4
+      # Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_CI_ROLE_NAME }}
+          aws-region: ${{ vars.AWS_REGION }}
+      # install dependencies
+      - name: Install dependencies
+        run: pnpm i
+      # build and bundle
+      - name: Build and bundle application
+        run: pnpm build:serverless
+      # Bootstrap CDK
+      - name: Bootstrap CDK
+        run: npx cdk bootstrap
+      - name: Deploy
+        run: npx cdk deploy --require-approval never
+      
