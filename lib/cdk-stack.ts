@@ -33,12 +33,15 @@ export class CdkStack extends cdk.Stack {
       this,
       'BlogMetadataTable',
       {
-        tableName: `blog-metadata-${envName}`,
+        tableName: `BlogMetadata-${envName}`,
         partitionKey: {
-          name: 'id',
+          name: 'BlogId',
           type: cdk.aws_dynamodb.AttributeType.STRING,
         },
-        tags: [new cdk.Tag('env', envName), new cdk.Tag('stack', 'blog')],
+        sortKey: {
+          name: 'LanguageCode',
+          type: cdk.aws_dynamodb.AttributeType.STRING,
+        },
       },
     );
     this.createLambda({
