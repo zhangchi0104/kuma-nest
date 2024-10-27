@@ -6,7 +6,7 @@ on:
 
 env:
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
-  NODE_ENV: ${{ $GITHUB_BASE_REF == 'main' && 'prod' || 'dev' }}
+  NODE_ENV: ${{ GITHUB_BASE_REF == 'main' && 'prod' || 'dev' }}
 
 jobs:
   build:
