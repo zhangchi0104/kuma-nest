@@ -39,7 +39,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           PLAN: '${{ steps.plan.cdkDiff.stdout }}'
-          RUN_ENV: ${{ GITHUB_BASE_REF == main && 'prod' || 'dev' }}
+          RUN_ENV: ${{ github.base_ref == main && 'prod' || 'dev' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
