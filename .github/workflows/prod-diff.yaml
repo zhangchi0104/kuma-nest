@@ -44,14 +44,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             // 1. Prepare format of the comment
-            const output = `#### Environment: ${{ process.env.RUN_ENV }}
+            const output = `#### Environment: $RUN_ENV
 
             #### cdk diff 📖
 
             <details><summary>Show DIFF</summary>
 
             \`\`\`
-            ${process.env.PLAN}
+            $PLAN
             \`\`\`
 
             </details>`;
