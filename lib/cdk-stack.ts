@@ -10,16 +10,12 @@ interface LambdaProps {
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    const envName =
-      process.env.NODE_ENV || process.env.NODE_ENV === 'production'
-        ? 'prod'
-        : 'dev';
     // The code that defines your stack goes here
     const contentBucket = new cdk.aws_s3.Bucket(this, 'BlogContentBucket', {
-      bucketName: `alexz-blog-content-${envName}-${process.env.CDK_REGION || 'ap-southeast-2'}`,
+      bucketName: `alexz-blog-content-${this.envName}-${process.env.CDK_REGION || 'ap-southeast-2'}`,
     });
     const assetsBucket = new cdk.aws_s3.Bucket(this, 'BlogAssetsBucket', {
-      bucketName: `alexz-blog-assets-${envName}-${process.env.CDK_REGION || 'ap-southeast-2'}`,
+      bucketName: `alexz-blog-assets-${this.envName}-${process.env.CDK_REGION || 'ap-southeast-2'}`,
       publicReadAccess: true,
       blockPublicAccess: {
         blockPublicAcls: false,
@@ -33,7 +29,7 @@ export class CdkStack extends cdk.Stack {
       this,
       'BlogMetadataTable',
       {
-        tableName: `BlogMetadata-${envName}`,
+        tableName: `BlogMetadata-${this.envName}`,
         partitionKey: {
           name: 'BlogId',
           type: cdk.aws_dynamodb.AttributeType.STRING,
