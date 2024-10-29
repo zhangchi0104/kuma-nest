@@ -8,7 +8,7 @@ export type UpdateBlogMetadata = Partial<
 
 export interface ListBlogMetadataResponse {
   metadata: BlogMetadata[];
-  nextPageCursor?: Record<string, any>;
+  nextPageCursor?: string;
 }
 @Injectable()
 export abstract class BlogMetadataService {

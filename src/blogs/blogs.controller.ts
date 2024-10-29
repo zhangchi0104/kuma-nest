@@ -45,30 +45,7 @@ export class BlogsController {
     )
     query: GetBlogMetadataDto,
   ) {
-    console.log(query);
-    const { pageSize, ...rest } = query;
-    const actualPageSize = (pageSize ?? 5) + 1;
-    const awsResult = await this.metadataService.listBlogMetadata({
-      ...rest,
-      pageSize: actualPageSize,
-    });
-    if (awsResult.metadata.length === actualPageSize) {
-      awsResult.metadata.pop();
-      const lastItem = awsResult.metadata[awsResult.metadata.length - 1];
-      const cursor = {
-        BlogId: lastItem.BlogId,
-        CreatedAtUtc: lastItem.CreatedAtUtc,
-        LanguageCode: lastItem.LanguageCode,
-      };
-      return {
-        metadata: awsResult.metadata,
-        cursor: encodeURIComponent(JSON.stringify(cursor)),
-      };
-    }
-    return {
-      ...awsResult,
-      cursor: undefined,
-    };
+    return await this.metadataService.listBlogMetadata(query);
   }
 
   @Get(':id')

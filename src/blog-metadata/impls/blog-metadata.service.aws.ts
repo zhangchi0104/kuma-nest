@@ -35,7 +35,16 @@ export class AwsBlogMetadataService extends BlogMetadataService {
   }
 
   async listBlogMetadata(dto: GetBlogMetadataDto) {
-    const cmd = await this.prepareQueryCmd(dto);
+    const { pageSize, ...rest } = dto;
+    // AWS returns LastEvaluatedKey even if there are no more items to return
+    // A trick is to request one more item than the page size and pop the last item
+    // to determine if there are more items to return
+    // and make the cursor the last item in the remaining items
+    const actualPageSize = pageSize || 5;
+    const cmd = await this.prepareQueryCmd({
+      ...rest,
+      pageSize: actualPageSize + 1,
+    });
     const result = await this.docClient.send(cmd);
     if (!result.Items || result.Items.length === 0) {
       return {
@@ -43,9 +52,24 @@ export class AwsBlogMetadataService extends BlogMetadataService {
         nextPageCursor: undefined,
       };
     }
+    // if there are more items to return
+    // pop the last item and set the last of the remaining items as the cursor
+    if (result.Items.length === actualPageSize + 1) {
+      result.Items.pop();
+      const lastItem = result.Items[result.Items.length - 1];
+      const cursor = {
+        BlogId: lastItem.BlogId,
+        CreatedAtUtc: lastItem.CreatedAtUtc,
+        LanguageCode: lastItem.LanguageCode,
+      };
+      return {
+        metadata: result.Items as BlogMetadata[],
+        nextPageCursor: encodeURIComponent(JSON.stringify(cursor)),
+      };
+    }
     return {
       metadata: result.Items as BlogMetadata[],
-      nextPageCursor: result.LastEvaluatedKey,
+      nextPageCursor: undefined,
     };
   }
 
@@ -120,14 +144,16 @@ export class AwsBlogMetadataService extends BlogMetadataService {
     return result.Count ? result.Count > 0 : false;
   }
 
-  private async prepareQueryCmd(dto: GetBlogMetadataDto) {
+  private async prepareQueryCmd(
+    dto: Omit<GetBlogMetadataDto, 'pageSize'> & { pageSize: number },
+  ) {
     const params = new QueryCommand({
       TableName: AwsBlogMetadataService.blogMetadataTableName,
       IndexName: AwsBlogMetadataService.languageCodeIndex,
       KeyConditionExpression: '#lang = :lang',
       FilterExpression:
         'attribute_not_exists(isDeleted) OR isDeleted = :isDeleted',
-      Limit: dto.pageSize ?? 5,
+      Limit: dto.pageSize,
       ExpressionAttributeNames: {
         '#lang': 'LanguageCode',
       },
