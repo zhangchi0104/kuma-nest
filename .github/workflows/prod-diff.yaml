@@ -42,7 +42,7 @@ jobs:
       - name: Write Content TO PR
         uses: actions/github-script@v7
         env:
-          PLAN: '${{ steps.plan.cdkDiff.outputs.stdout }}'
+          PLAN: '${{ steps.cdkDiff.outputs.stdout }}'
           RUN_ENV: ${{ github.base_ref == 'main' && 'prod' || 'dev' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
