@@ -18,5 +18,10 @@
         "strictBindCallApply": true,
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true
-    }
+    },
+    "exclude": [
+        "node_modules",
+        "cdk.out",
+        "dist"
+    ]
 }

@@ -5,18 +5,18 @@ import {
 } from '../blog-metadata.service';
 import { BlogMetadata } from '../blog-metadata.types';
 import {
-  DeleteCommand,
   DynamoDBDocumentClient,
   PutCommand,
-  ScanCommand,
-  ScanCommandInput,
   UpdateCommand,
   QueryCommand,
   UpdateCommandInput,
+  TransactWriteCommand,
+  TransactWriteCommandInput,
 } from '@aws-sdk/lib-dynamodb';
 import { isRunningLocal } from 'src/utils/utils.constants';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import env from 'src/env';
+import { GetBlogMetadataDto } from 'src/blogs/dtos/get-blog-metadata.dto';
 @Injectable()
 export class AwsBlogMetadataService extends BlogMetadataService {
   docClient: DynamoDBDocumentClient;
@@ -34,13 +34,19 @@ export class AwsBlogMetadataService extends BlogMetadataService {
     this.docClient = DynamoDBDocumentClient.from(dynamoDb);
   }
 
-  async listBlogMetadata(pageSize: number, cursor?: string) {
-    const cmd = await this.prepareQueryCmd(pageSize, cursor);
+  async listBlogMetadata(dto: GetBlogMetadataDto) {
+    const cmd = await this.prepareQueryCmd(dto);
     const result = await this.docClient.send(cmd);
-    if (!result.Items) {
-      return [];
+    if (!result.Items || result.Items.length === 0) {
+      return {
+        metadata: [],
+        nextPageCursor: undefined,
+      };
     }
-    return result as any as BlogMetadata[];
+    return {
+      metadata: result.Items as BlogMetadata[],
+      nextPageCursor: result.LastEvaluatedKey,
+    };
   }
 
   async createBlogMetadata(blogMetadata: BlogMetadata): Promise<BlogMetadata> {
@@ -57,19 +63,40 @@ export class AwsBlogMetadataService extends BlogMetadataService {
     await this.docClient.send(updateCmd);
   }
 
-  async deleteBlogMetadata(
-    id: string,
-    immediately: boolean = false,
-  ): Promise<void> {
-    if (!immediately) {
-      await this.updateBlogMetadata({ PostId: id, isDeleted: true });
-      return;
-    }
-    const removeCmd = new DeleteCommand({
-      Key: { id },
+  async deleteBlogMetadata(_id: string): Promise<void> {
+    const queryCmd = new QueryCommand({
+      KeyConditionExpression: '#PK = :id',
       TableName: AwsBlogMetadataService.blogMetadataTableName,
     });
-    await this.docClient.send(removeCmd);
+    const queryRes = await this.docClient.send(queryCmd);
+    const metadatas = queryRes.Items as any as BlogMetadata[];
+    // BatchWrite only supports 25 items at a time
+    // probably not going to have 100 langauges
+    // one transaction should be enough
+    const transactionBody: TransactWriteCommandInput['TransactItems'] =
+      metadatas.map((m) => {
+        const { BlogId, LanguageCode } = m;
+        return {
+          Update: {
+            TableName: AwsBlogMetadataService.blogMetadataTableName,
+            Key: { BlogId, LanguageCode },
+            UpdateExpression:
+              'set #isDeleted = :isDeleted, #deletedAtUtc = :deletedAtUtc',
+            ExpressionAttributeValues: {
+              ':isDeleted': true,
+              ':deletedAtUtc': new Date().toISOString(),
+            },
+            ExpressionAttributeNames: {
+              '#isDeleted': 'isDeleted',
+              '#deletedAtUtc': 'deletedAtUtc',
+            },
+          },
+        };
+      });
+    const transactWriteCmd = new TransactWriteCommand({
+      TransactItems: transactionBody,
+    });
+    await this.docClient.send(transactWriteCmd);
   }
 
   async deleteMetadataIfExists(id: string): Promise<void> {
@@ -93,15 +120,26 @@ export class AwsBlogMetadataService extends BlogMetadataService {
     return result.Count ? result.Count > 0 : false;
   }
 
-  private async prepareQueryCmd(pageSize: number, cursor?: string) {
-    const params = new ScanCommand({
+  private async prepareQueryCmd(dto: GetBlogMetadataDto) {
+    const params = new QueryCommand({
       TableName: AwsBlogMetadataService.blogMetadataTableName,
-      Limit: pageSize,
-      ExclusiveStartKey: cursor
-        ? (JSON.parse(cursor) as ScanCommandInput['ExclusiveStartKey'])
+      IndexName: AwsBlogMetadataService.languageCodeIndex,
+      KeyConditionExpression: '#lang = :lang',
+      FilterExpression:
+        'attribute_not_exists(isDeleted) OR isDeleted = :isDeleted',
+      Limit: dto.pageSize ?? 5,
+      ExpressionAttributeNames: {
+        '#lang': 'LanguageCode',
+      },
+      ExpressionAttributeValues: {
+        ':lang': dto.languageCode,
+        ':isDeleted': false,
+      },
+      ScanIndexForward: false,
+      ExclusiveStartKey: dto.cursor
+        ? JSON.parse(decodeURIComponent(dto.cursor))
         : undefined,
     });
-
     return params;
   }
 
@@ -120,9 +158,9 @@ export class AwsBlogMetadataService extends BlogMetadataService {
       expr += `, ${key}=:${key}`;
       values[`:${key}`] = val;
     }
-    if (blogMetadata.description) {
+    if (blogMetadata.Description) {
       expr += ', description=:description';
-      values[':description'] = blogMetadata.description;
+      values[':description'] = blogMetadata.Description;
     }
     return new UpdateCommand({
       Key: { PostId: blogMetadata.PostId },
@@ -130,5 +168,8 @@ export class AwsBlogMetadataService extends BlogMetadataService {
       UpdateExpression: expr,
       ExpressionAttributeValues: values,
     });
+  }
+  private static get languageCodeIndex() {
+    return 'LanguageCodeIndex';
   }
 }

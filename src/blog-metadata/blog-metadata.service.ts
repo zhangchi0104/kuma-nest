@@ -1,16 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { BlogMetadata } from './blog-metadata.types';
+import { GetBlogMetadataDto } from '../blogs/dtos/get-blog-metadata.dto';
 
 export type UpdateBlogMetadata = Partial<
   Omit<BlogMetadata, 'updatedAtUtc' | 'PostId'> & { PostId: string }
 >;
+
+export interface ListBlogMetadataResponse {
+  metadata: BlogMetadata[];
+  nextPageCursor?: Record<string, any>;
+}
 @Injectable()
 export abstract class BlogMetadataService {
   // CRUD methods for blog metadata
   async listBlogMetadata(
-    _pageSize: number,
-    _cursor?: string,
-  ): Promise<BlogMetadata[]> {
+    _dto: GetBlogMetadataDto,
+  ): Promise<ListBlogMetadataResponse> {
     throw new Error('Method not implemented.');
   }
 

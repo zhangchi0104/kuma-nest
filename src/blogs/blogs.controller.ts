@@ -46,8 +46,29 @@ export class BlogsController {
     query: GetBlogMetadataDto,
   ) {
     console.log(query);
-    const { pageSize, cursor } = query;
-    return await this.metadataService.listBlogMetadata(pageSize ?? 10, cursor);
+    const { pageSize, ...rest } = query;
+    const actualPageSize = (pageSize ?? 5) + 1;
+    const awsResult = await this.metadataService.listBlogMetadata({
+      ...rest,
+      pageSize: actualPageSize,
+    });
+    if (awsResult.metadata.length === actualPageSize) {
+      awsResult.metadata.pop();
+      const lastItem = awsResult.metadata[awsResult.metadata.length - 1];
+      const cursor = {
+        BlogId: lastItem.BlogId,
+        CreatedAtUtc: lastItem.CreatedAtUtc,
+        LanguageCode: lastItem.LanguageCode,
+      };
+      return {
+        metadata: awsResult.metadata,
+        cursor: encodeURIComponent(JSON.stringify(cursor)),
+      };
+    }
+    return {
+      ...awsResult,
+      cursor: undefined,
+    };
   }
 
   @Get(':id')
@@ -67,15 +88,15 @@ export class BlogsController {
     }
     try {
       const { content, metadata } = body;
-      const { title, description, tags, createdAt } = metadata;
+      const { title, description, tags, createdAt, languageCode } = metadata;
       await Promise.all([
         this.metadataService.createBlogMetadata({
-          PostId: id,
-          title,
-          description,
-          tags,
-          publishedAtUtc: createdAt,
-          isDeleted: false,
+          BlogId: id,
+          Title: title,
+          Description: description,
+          Tags: tags,
+          CreatedAtUtc: createdAt,
+          LanguageCode: languageCode,
         }),
         this.contentService.createBlog(id, content),
       ]);
