@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { isRunningLocal } from './utils/utils.constants';
 import { ValidationPipe } from '@nestjs/common';
+import { TransformCamcelCaseInterceptor } from './utils/camel-case-transformer.util';
 const APP_PORT = process.env.PORT || 8000;
 async function bootstrap() {
   if (isRunningLocal) {
@@ -16,6 +17,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalInterceptors(new TransformCamcelCaseInterceptor());
   await app.listen(APP_PORT);
 }
 bootstrap();

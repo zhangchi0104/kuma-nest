@@ -6,8 +6,9 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { LanguageRequiredDto } from 'src/dtos/language.dto';
 
-export class CreateMetadataDto {
+export class CreateMetadataDto extends LanguageRequiredDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)

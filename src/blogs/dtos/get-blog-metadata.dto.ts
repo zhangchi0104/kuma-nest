@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { LanguageRequiredDto } from 'src/dtos/language.dto';
 
-export class GetBlogMetadataDto {
+export class GetBlogMetadataDto extends LanguageRequiredDto {
   @Type(() => Number)
   @IsOptional()
   @IsInt()

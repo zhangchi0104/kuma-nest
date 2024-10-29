@@ -45,9 +45,7 @@ export class BlogsController {
     )
     query: GetBlogMetadataDto,
   ) {
-    console.log(query);
-    const { pageSize, cursor } = query;
-    return await this.metadataService.listBlogMetadata(pageSize ?? 10, cursor);
+    return await this.metadataService.listBlogMetadata(query);
   }
 
   @Get(':id')
@@ -67,15 +65,15 @@ export class BlogsController {
     }
     try {
       const { content, metadata } = body;
-      const { title, description, tags, createdAt } = metadata;
+      const { title, description, tags, createdAt, languageCode } = metadata;
       await Promise.all([
         this.metadataService.createBlogMetadata({
-          PostId: id,
-          title,
-          description,
-          tags,
-          publishedAtUtc: createdAt,
-          isDeleted: false,
+          BlogId: id,
+          Title: title,
+          Description: description,
+          Tags: tags,
+          CreatedAtUtc: createdAt,
+          LanguageCode: languageCode,
         }),
         this.contentService.createBlog(id, content),
       ]);

@@ -38,6 +38,19 @@ export class CdkStack extends cdk.Stack {
           name: 'LanguageCode',
           type: cdk.aws_dynamodb.AttributeType.STRING,
         },
+        globalSecondaryIndexes: [
+          {
+            indexName: 'LanguageCodeIndex',
+            partitionKey: {
+              name: 'LanguageCode',
+              type: cdk.aws_dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+              name: 'CreatedAtUtc',
+              type: cdk.aws_dynamodb.AttributeType.STRING,
+            },
+          },
+        ],
       },
     );
     this.createLambda({
