@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { BlogMetadataService } from './blog-metadata.service';
-import { AwsBlogMetadataService } from './impls/blog-metadata.service.aws';
+import { PrismaBlogMetadata } from './impls/blog-metadata.service.prisma';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
   providers: [
     {
       provide: BlogMetadataService,
-      useClass: AwsBlogMetadataService,
+      useClass: PrismaBlogMetadata,
     },
+    PrismaService,
   ],
   exports: [BlogMetadataService],
 })

@@ -1,8 +1,16 @@
 export interface BlogMetadata {
-  title: string;
-  id: string;
-  description?: string;
-  tags: string[];
-  publishedAtUtc: string;
-  updatedAtUtc?: string;
+  Title: string;
+  LanguageCode: string;
+  BlogId: string;
+  Description?: string;
+  Tags: string[];
+  CreatedAtUtc: string;
+  UpdatedAtUtc?: string;
+  IsDeleted?: boolean;
+  DeletedAtUtc?: string;
 }
+
+export type BlogMetadataPrimaryKey = Pick<
+  BlogMetadata,
+  'BlogId' | 'LanguageCode'
+>;

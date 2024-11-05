@@ -1,0 +1,81 @@
+name: 'cdk diff'
+
+on:
+  pull_request:
+    branches: ['main', 'dev']
+
+env:
+  CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
+  NODE_ENV: ${{ github.base_ref == 'main' && 'prod' || 'dev' }}
+  PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
+  DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSATION_URL }}
+  DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+
+jobs:
+  build:
+    name: Run CDK diff
+    environment: ${{ github.base_ref == 'main' && 'prod' || 'dev' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '9.6.0'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build and bundle application
+        run: |
+          pnpm build:lambda
+          mv dist/client/libquery_engine-rhel-*.node dist/
+          rm -rf dist/client/libquery_engine-*.node
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Run cdk synth
+        run: npx cdk synth
+      - name: Run cdk diff
+
+        run: npx cdk diff --no-color 2>&1 2>&1 | tee output.log
+      - name: Save output
+        id: cdkDiff
+        run: |
+          echo "data<<EOF" >> $GITHUB_OUTPUT
+          echo "$(cat output.log)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Write Content TO PR
+        uses: actions/github-script@v7
+        env:
+          PLAN: '${{ steps.cdkDiff.outputs.data }}'
+          RUN_ENV: ${{ github.base_ref == 'main' && 'prod' || 'dev' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 1. Prepare format of the comment
+            const output = `#### Environment: ${process.env.RUN_ENV}
+
+            #### cdk diff 📖
+
+            <details><summary>Show DIFF</summary>
+
+            \`\`\`
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>`;
+
+            // 2. Create a new one
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output,
+            })

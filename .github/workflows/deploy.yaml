@@ -1,0 +1,61 @@
+name: Deploy Blog
+run-name: "Deploy to ${{github.ref == 'ref/heads/main' && 'Production' || 'Development' }} Environment"
+on:
+  push:
+    branches:
+      - "dev"
+      - "main"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
+  NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+  PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
+  DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSACTION_URL }}
+  DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+
+jobs:
+  deploy:
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      # checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Setup pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "9.6.0"
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+      # Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      # install dependencies
+      - name: Install dependencies
+        run: pnpm i
+      # build and bundle
+      - name: Build and bundle application
+        run: |
+          pnpm build:lambda
+          mv dist/client/libquery_engine-rhel-*.node dist/
+          rm -rf dist/client/libquery_engine-*.node
+      # Bootstrap CDK
+      - name: Bootstrap CDK
+        run: npx cdk bootstrap
+
+      - name: Deploy
+        run: npx cdk deploy --require-approval never
+        env:
+          JWT_PUBLIC_KEY: ${{ vars.JWT_PUBLIC_KEY }}
