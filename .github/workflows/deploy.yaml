@@ -13,6 +13,9 @@ env:
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
   PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
+  DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSATION_URL }}
+  DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+
 jobs:
   deploy:
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
@@ -46,7 +49,8 @@ jobs:
       - name: Build and bundle application
         run: |
           pnpm build:lambda
-          mv dist/client/libquery_engine-*.dylib.node dist/
+          mv dist/client/libquery_engine-rhel-*.node dist/
+          rm -rf dist/client/libquery_engine-*.node
       # Bootstrap CDK
       - name: Bootstrap CDK
         run: npx cdk bootstrap
