@@ -12,7 +12,7 @@ concurrency:
 env:
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-  PRISMA_CLI_BINARY_TARGETS=rhel-openssl-3.0.x
+  PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
 jobs:
   deploy:
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
