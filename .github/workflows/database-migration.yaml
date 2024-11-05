@@ -20,5 +20,5 @@ jobs:
       - name: Apply all pending migrations to the database
         run: npx prisma migrate deploy
         env:
-          DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSATION_URL }}
+          DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSACTION_URL }}
           DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
