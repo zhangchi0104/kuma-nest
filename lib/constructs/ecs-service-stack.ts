@@ -44,6 +44,8 @@ export class EcsServiceStack extends Construct {
           containerPort: 8000,
           environment: { ...env },
         },
+        domainZone: hostedZone,
+        domainName: 'prod.api.chiz.dev',
         cluster: ecsCluster,
       },
     );
