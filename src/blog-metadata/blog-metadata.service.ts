@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { BlogMetadata } from './blog-metadata.types';
 import { GetBlogMetadataDto } from '../blogs/dtos/get-blog-metadata.dto';
+import { Post } from '@prisma/client';
 
 export type UpdateBlogMetadata = Partial<
   Omit<BlogMetadata, 'updatedAtUtc' | 'PostId'> & { PostId: string }
 >;
 
 export interface ListBlogMetadataResponse {
-  metadata: BlogMetadata[];
-  nextPageCursor?: string;
+  metadata: Post[];
+  nextPageCursor?: string | number;
 }
 @Injectable()
 export abstract class BlogMetadataService {

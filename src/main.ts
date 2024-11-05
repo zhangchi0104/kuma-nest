@@ -17,7 +17,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.useGlobalInterceptors(new TransformCamcelCaseInterceptor());
+  //app.useGlobalInterceptors(new TransformCamcelCaseInterceptor());
   await app.listen(APP_PORT);
 }
 bootstrap();

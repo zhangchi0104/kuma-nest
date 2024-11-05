@@ -12,7 +12,7 @@ concurrency:
 env:
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-
+  PRISMA_CLI_BINARY_TARGETS=rhel-openssl-3.0.x
 jobs:
   deploy:
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
@@ -44,7 +44,9 @@ jobs:
         run: pnpm i
       # build and bundle
       - name: Build and bundle application
-        run: pnpm build:serverless
+        run: |
+          pnpm build:lambda
+          mv dist/client/libquery_engine-*.dylib.node dist/
       # Bootstrap CDK
       - name: Bootstrap CDK
         run: npx cdk bootstrap
