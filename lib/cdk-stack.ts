@@ -95,6 +95,8 @@ export class CdkStack extends cdk.Stack {
         BLOG_CONTENT_BUCKET: props.contentBucket.bucketName,
         BLOG_ASSETS_BUCKET: props.assetsBucket.bucketName,
         JWT_PUBLIC_KEY: process.env.CLERK_PUBLIC_KEY || '',
+        DATABASE_TRANSACTION_URL: process.env.DATABASE_TRANSACTION_URL || '',
+        DATABASE_DIRECT_URL: process.env.DATABASE_DIRECT_URL || '',
       },
       functionName: `BlogLambda-${this.envName}`,
     });
