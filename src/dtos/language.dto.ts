@@ -1,8 +1,8 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
-import { SupportedLanguages } from 'src/utils/type.util';
+import { $Enums } from '@prisma/client';
+import { IsIn, IsNotEmpty } from 'class-validator';
 
 export class LanguageRequiredDto {
   @IsNotEmpty()
-  @IsEnum(SupportedLanguages)
-  languageCode: SupportedLanguages;
+  @IsIn(['ZH_CN', 'EN_US'])
+  languageCode: $Enums.LanguageCodes;
 }
