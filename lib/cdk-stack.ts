@@ -33,7 +33,6 @@ export class CdkStack extends cdk.Stack {
         hostedZone,
         env,
       });
-      console.log('LambdaStack', lambdaStack.lambda);
       storageStack.grantReadWrite(lambdaStack.lambda);
     } else {
       const ecsStack = new EcsServiceStack(this, 'EcsServiceStack', {
