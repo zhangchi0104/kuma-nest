@@ -4,18 +4,24 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
-import { CfnOutput, Stack } from 'aws-cdk-lib';
+import { CfnOutput } from 'aws-cdk-lib';
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
 import path from 'path';
-export class EcsServiceStack extends Stack {
+import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
+type EcsServiceStackProps = ServerProps & {
+  vpc: ec2.IVpc;
+  hostedZone: route53.IHostedZone;
+};
+export class EcsServiceStack extends Construct {
   public readonly ecsService: ecsp.ApplicationLoadBalancedEc2Service;
-  constructor(scope: Construct, id: string, props: ServerProps) {
+  constructor(scope: Construct, id: string, props: EcsServiceStackProps) {
+    const { env, vpc, hostedZone } = props;
     super(scope, id);
-    const vpc = ec2.Vpc.fromLookup(this, 'MainVPC', {
-      vpcId: process.env.VPC_ID || '',
-    });
     const dockerfilePath = ecs.ContainerImage.fromAsset(
       path.join(__dirname, '../../'),
+      {
+        platform: Platform.LINUX_AMD64,
+      },
     );
     const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
       vpc: vpc,
@@ -32,10 +38,11 @@ export class EcsServiceStack extends Stack {
       this,
       'BlogServerService',
       {
+        memoryLimitMiB: 1024,
         taskImageOptions: {
           image: dockerfilePath,
           containerPort: 8000,
-          environment: { ...props.env },
+          environment: { ...env },
         },
         cluster: ecsCluster,
       },
@@ -45,12 +52,9 @@ export class EcsServiceStack extends Stack {
       key: 'LoadBalancerDNS',
       value: this.ecsService.loadBalancer.loadBalancerDnsName,
     });
-    const zone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: 'next.dev.api.chiz.dev',
-    });
     new route53.ARecord(this, 'AliasRecord', {
-      zone: zone,
-      recordName: 'api',
+      zone: hostedZone,
+      recordName: 'prod',
       target: route53.RecordTarget.fromAlias(
         new route53Targets.LoadBalancerTarget(this.ecsService.loadBalancer),
       ),

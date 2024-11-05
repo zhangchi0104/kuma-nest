@@ -17,14 +17,28 @@ export class CdkStack extends cdk.Stack {
       DATABASE_DIRECT_URL: process.env.DATABASE_DIRECT_URL || '',
       DATABASE_TRANSACTION_URL: process.env.DATABASE_TRANSACTION_URL || '',
     };
+    const hostedZone = cdk.aws_route53.HostedZone.fromLookup(
+      this,
+      'HostedZone',
+      {
+        domainName: 'api.chiz.dev',
+      },
+    );
+    const vpc = cdk.aws_ec2.Vpc.fromLookup(this, 'Vpc', {
+      vpcId: process.env.VPC_ID || '',
+    });
     if (this.envName === 'dev') {
       // save me a few bucks by using lambda for dev
       const lambdaStack = new LambdaStack(this, 'LambdaStack', {
+        hostedZone,
         env,
       });
+      console.log('LambdaStack', lambdaStack.lambda);
       storageStack.grantReadWrite(lambdaStack.lambda);
     } else {
       const ecsStack = new EcsServiceStack(this, 'EcsServiceStack', {
+        hostedZone,
+        vpc,
         env,
       });
       storageStack.grantReadWrite(ecsStack.ecsService.taskDefinition.taskRole);

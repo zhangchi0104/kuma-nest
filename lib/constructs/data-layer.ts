@@ -1,10 +1,10 @@
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
-import { CfnOutput, Stack } from 'aws-cdk-lib';
+import { CfnOutput } from 'aws-cdk-lib';
 import { IGrantable } from 'aws-cdk-lib/aws-iam';
 
-export class DataLayer extends Stack {
+export class DataLayer extends Construct {
   public readonly contentBucket: s3.Bucket;
   public readonly assetsBucket: s3.Bucket;
   public readonly metadataTable: dynamodb.TableV2;

@@ -1,16 +1,19 @@
-import { CfnOutput, Stack } from 'aws-cdk-lib';
+import { CfnOutput } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
-import { IGrantable } from 'aws-cdk-lib/aws-iam';
-export class LambdaStack extends Stack {
+type LambdaStackProps = ServerProps & {
+  hostedZone: route53.IHostedZone;
+};
+export class LambdaStack extends Construct {
   public readonly lambda: lambda.Function;
-  constructor(scope: Construct, id: string, props: ServerProps) {
-    const { env } = props;
+  constructor(scope: Construct, id: string, props: LambdaStackProps) {
+    const { env, hostedZone } = props;
     super(scope, id);
     const lambdaFunction = new lambda.Function(this, 'BlogLambda', {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -19,6 +22,7 @@ export class LambdaStack extends Stack {
       environment: { ...env },
       functionName: `BlogLambda-${this.envName}`,
     });
+    this.lambda = lambdaFunction;
     //const dockerfilePath = path.join(__dirname, '..');
     //const lambda = new cdk.aws_lambda.DockerImageFunction(this, 'BlogLambda', {
     //  code: cdk.aws_lambda.DockerImageCode.fromImageAsset(dockerfilePath),
@@ -51,11 +55,8 @@ export class LambdaStack extends Stack {
         stageName: this.envName,
       },
     });
-    const zone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: 'api.chiz.dev',
-    });
     new route53.ARecord(this, 'ApiGatewayAliasRecord', {
-      zone,
+      zone: hostedZone,
       recordName: `${this.envName}`,
       target: route53.RecordTarget.fromAlias(
         new route53Targets.ApiGateway(apiGateway),
