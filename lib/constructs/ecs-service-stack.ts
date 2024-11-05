@@ -27,7 +27,7 @@ export class EcsServiceStack extends Construct {
       vpc: vpc,
       capacity: {
         minCapacity: 1,
-        maxCapacity: 2,
+        maxCapacity: 1,
         instanceType: ec2.InstanceType.of(
           ec2.InstanceClass.T3,
           ec2.InstanceSize.MICRO,

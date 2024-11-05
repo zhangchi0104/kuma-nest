@@ -25,7 +25,7 @@ export class CdkStack extends cdk.Stack {
       },
     );
     const vpc = cdk.aws_ec2.Vpc.fromLookup(this, 'Vpc', {
-      vpcId: process.env.VPC_ID || '',
+      isDefault: true,
     });
     if (this.envName === 'dev') {
       // save me a few bucks by using lambda for dev
