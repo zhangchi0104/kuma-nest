@@ -7,7 +7,6 @@ on:
 env:
   HUSKY: "0"
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
-  NODE_ENV: ${{ github.base_ref == 'main' && 'production' || 'development' }}
   PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
   DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSATION_URL }}
   DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
@@ -42,9 +41,12 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
       - name: Run cdk synth
         run: npx cdk synth
+        env:
+          NODE_ENV: ${{ github.base_ref == 'main' && 'production' || 'development' }}
       - name: Run cdk diff
-
         run: npx cdk diff --no-color 2>&1 2>&1 | tee output.log
+        env:
+          NODE_ENV: ${{ github.base_ref == 'main' && 'production' || 'development' }}
       - name: Save output
         id: cdkDiff
         run: |
