@@ -38,7 +38,7 @@ export class EcsServiceStack extends Construct {
       this,
       'BlogServerService',
       {
-        memoryReservationMiB: 2048,
+        memoryReservationMiB: 512,
         taskImageOptions: {
           image: dockerfilePath,
           containerPort: 8000,
