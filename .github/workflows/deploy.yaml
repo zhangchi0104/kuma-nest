@@ -19,7 +19,6 @@ env:
 jobs:
   deploy:
     environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-    timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
       id-token: write
