@@ -19,4 +19,4 @@ RUN pnpm nest build
 
 
 # CMD
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
