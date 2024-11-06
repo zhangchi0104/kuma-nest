@@ -17,6 +17,6 @@ RUN pnpx prisma generate
 # RUN
 RUN pnpm nest build
 
-
+EXPOSE 8000
 # CMD
 CMD ["node", "dist/src/main.js"]
