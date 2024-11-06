@@ -54,12 +54,5 @@ export class EcsServiceStack extends Construct {
       key: 'LoadBalancerDNS',
       value: this.ecsService.loadBalancer.loadBalancerDnsName,
     });
-    new route53.ARecord(this, 'AliasRecord', {
-      zone: hostedZone,
-      recordName: 'prod',
-      target: route53.RecordTarget.fromAlias(
-        new route53Targets.LoadBalancerTarget(this.ecsService.loadBalancer),
-      ),
-    });
   }
 }
