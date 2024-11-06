@@ -26,8 +26,6 @@ export class EcsServiceStack extends Construct {
     const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
       vpc: vpc,
       capacity: {
-        minCapacity: 1,
-        maxCapacity: 1,
         instanceType: ec2.InstanceType.of(
           ec2.InstanceClass.T3,
           ec2.InstanceSize.MICRO,
@@ -38,7 +36,7 @@ export class EcsServiceStack extends Construct {
       this,
       'BlogServerService',
       {
-        memoryReservationMiB: 512,
+        memoryLimitMiB: 400,
         taskImageOptions: {
           image: dockerfilePath,
           containerPort: 8000,
@@ -47,6 +45,11 @@ export class EcsServiceStack extends Construct {
         domainZone: hostedZone,
         domainName: 'prod.api.chiz.dev',
         cluster: ecsCluster,
+        desiredCount: 1,
+        circuitBreaker: {
+          enable: true,
+          rollback: true,
+        },
       },
     );
 
