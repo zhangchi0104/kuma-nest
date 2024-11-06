@@ -2,7 +2,7 @@ import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+
 import { Construct } from 'constructs';
 import { CfnOutput } from 'aws-cdk-lib';
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
@@ -38,7 +38,7 @@ export class EcsServiceStack extends Construct {
       this,
       'BlogServerService',
       {
-        memoryLimitMiB: 1024,
+        memoryReservationMiB: 2048,
         taskImageOptions: {
           image: dockerfilePath,
           containerPort: 8000,
