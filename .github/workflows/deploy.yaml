@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  HUSKY: "0"
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
   PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
