@@ -12,7 +12,6 @@ concurrency:
 env:
   HUSKY: "0"
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
-  NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
   PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
   DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSACTION_URL }}
   DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
@@ -60,3 +59,5 @@ jobs:
         run: npx cdk deploy --require-approval never
         env:
           JWT_PUBLIC_KEY: ${{ vars.JWT_PUBLIC_KEY }}
+          NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+
