@@ -68,7 +68,6 @@ export class EcsServiceStack extends Construct {
       {
         cluster: ecsCluster,
         taskDefinition,
-        vpc,
         publicLoadBalancer: true,
         domainZone: hostedZone,
         domainName: 'blog',
