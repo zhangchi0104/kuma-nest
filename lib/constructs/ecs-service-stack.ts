@@ -1,8 +1,9 @@
-import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
-
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 import { CfnOutput } from 'aws-cdk-lib';
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
@@ -13,49 +14,81 @@ type EcsServiceStackProps = ServerProps & {
   hostedZone: route53.IHostedZone;
 };
 export class EcsServiceStack extends Construct {
-  public readonly ecsService: ecsp.ApplicationLoadBalancedEc2Service;
+  public readonly ecsService: ecs.BaseService;
   constructor(scope: Construct, id: string, props: EcsServiceStackProps) {
     const { env, vpc, hostedZone } = props;
     super(scope, id);
-    const dockerfilePath = ecs.ContainerImage.fromAsset(
+    const certificate = acm.Certificate.fromCertificateArn(
+      this,
+      'DomainCertificate',
+      process.env.CERTIFICATE_ARN || '',
+    );
+    const conatinerImage = ecs.ContainerImage.fromAsset(
       path.join(__dirname, '../../'),
       {
         platform: Platform.LINUX_AMD64,
       },
     );
     const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
-      vpc: vpc,
-      capacity: {
-        instanceType: ec2.InstanceType.of(
-          ec2.InstanceClass.T3,
-          ec2.InstanceSize.MICRO,
-        ),
-      },
+      vpc,
     });
-    this.ecsService = new ecsp.ApplicationLoadBalancedEc2Service(
+    const asg = ecsCluster.addCapacity('BlogCapacity', {
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T3,
+        ec2.InstanceSize.MICRO,
+      ),
+      minCapacity: 1,
+      maxCapacity: 1,
+    });
+    asg.scaleOnCpuUtilization('BlogScaling', {
+      targetUtilizationPercent: 70,
+    });
+
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'BlogTask');
+    taskDefinition.addContainer('BlogContainer', {
+      containerName: 'BlogContainer',
+      image: conatinerImage,
+      memoryLimitMiB: 400,
+      environment: { ...env },
+      portMappings: [
+        { containerPort: 8000, hostPort: 8000, protocol: ecs.Protocol.TCP },
+      ],
+    });
+
+    const service = new ecs.Ec2Service(this, 'BlogService', {
+      cluster: ecsCluster,
+      taskDefinition,
+    });
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      'BlogServerService',
+      'LoadBalancer',
       {
-        memoryLimitMiB: 400,
-        taskImageOptions: {
-          image: dockerfilePath,
-          containerPort: 8000,
-          environment: { ...env },
-        },
-        domainZone: hostedZone,
-        domainName: 'prod.api.chiz.dev',
-        cluster: ecsCluster,
-        desiredCount: 1,
-        circuitBreaker: {
-          enable: true,
-          rollback: true,
-        },
+        vpc,
+        internetFacing: true,
       },
     );
-
+    const listener = loadBalancer.addListener('Listener', {
+      port: 443,
+      certificates: [certificate],
+    });
+    listener.addTargets('ECS', {
+      port: 8000,
+      targets: [
+        service.loadBalancerTarget({
+          containerName: 'BlogContainer',
+          containerPort: 8000,
+        }),
+      ],
+    });
+    new route53.ARecord(this, 'AliasRecord', {
+      zone: hostedZone,
+      target: route53.RecordTarget.fromAlias(
+        new route53Targets.LoadBalancerTarget(loadBalancer),
+      ),
+    });
+    this.ecsService = service;
     new CfnOutput(this, 'LoadBalancerDNS', {
-      key: 'LoadBalancerDNS',
-      value: this.ecsService.loadBalancer.loadBalancerDnsName,
+      value: loadBalancer.loadBalancerDnsName,
     });
   }
 }
