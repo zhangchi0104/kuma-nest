@@ -71,7 +71,7 @@ export class EcsServiceStack extends Construct {
         publicLoadBalancer: true,
         domainZone: hostedZone,
         domainName: 'blog',
-        certificate,
+        // certificate,
       },
     );
     this.ecsService = service;
