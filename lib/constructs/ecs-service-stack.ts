@@ -11,7 +11,7 @@ import { CfnOutput } from 'aws-cdk-lib';
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
 import path from 'path';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
-import { ApplicationLoadBalancedEc2Service } from 'aws-cdk-lib/aws-ecs-patterns';
+
 type EcsServiceStackProps = ServerProps & {
   vpc: ec2.IVpc;
   hostedZone: route53.IHostedZone;
@@ -19,7 +19,7 @@ type EcsServiceStackProps = ServerProps & {
 export class EcsServiceStack extends Construct {
   public readonly ecsService:
     | ecs.BaseService
-    | ecsp.ApplicationLoadBalancedEc2Service;
+    | ecsp.ApplicationLoadBalancedFargateService;
   constructor(scope: Construct, id: string, props: EcsServiceStackProps) {
     const { env, vpc, hostedZone } = props;
     super(scope, id);
@@ -79,36 +79,24 @@ export class EcsServiceStack extends Construct {
     //     new route53Targets.LoadBalancerTarget(loadBalancer),
     //   ),
     // });
-    const cluster = new ecs.Cluster(this, 'BlogCluster', {
-      vpc,
-    });
-    const asg = new autoscaling.AutoScalingGroup(this, 'BlogASG', {
-      vpc,
-      minCapacity: 1,
-      maxCapacity: 1,
-      instanceType: new ec2.InstanceType('t3.micro'),
-      machineImage: ec2.MachineImage.latestAmazonLinux2023(),
-    });
-    const asgCapacityProvider = new ecs.AsgCapacityProvider(
+
+    const service = new ecsp.ApplicationLoadBalancedFargateService(
       this,
-      'BlogCapacityProvider',
+      'BlogService',
       {
-        autoScalingGroup: asg,
+        taskImageOptions: {
+          image: conatinerImage,
+          containerPort: 8000,
+          environment: { ...env },
+        },
+        vpc,
+        domainName: 'prod.api.chiz.dev',
+        domainZone: hostedZone,
+        memoryLimitMiB: 512,
+        cpu: 256,
+        // certificate,
       },
     );
-    cluster.addAsgCapacityProvider(asgCapacityProvider);
-    const service = new ApplicationLoadBalancedEc2Service(this, 'BlogService', {
-      taskImageOptions: {
-        image: conatinerImage,
-        containerPort: 8000,
-        environment: { ...env },
-      },
-      cluster,
-      domainName: 'prod.api.chiz.dev',
-      domainZone: hostedZone,
-      memoryLimitMiB: 512,
-      // certificate,
-    });
     this.ecsService = service;
     new CfnOutput(this, 'LoadBalancerDNS', {
       value: service.loadBalancer.loadBalancerDnsName,
