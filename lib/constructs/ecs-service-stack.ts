@@ -82,23 +82,6 @@ export class EcsServiceStack extends Construct {
     const cluster = new ecs.Cluster(this, 'BlogCluster', {
       vpc,
     });
-    const autoScalingGroup = new autoscaling.AutoScalingGroup(this, 'BlogASG', {
-      vpc,
-      minCapacity: 1,
-      maxCapacity: 1,
-      instanceType: new ec2.InstanceType('t3.micro'),
-    });
-    autoScalingGroup.scaleOnCpuUtilization('CpuScaling', {
-      targetUtilizationPercent: 50,
-    });
-    const capacityProvider = new ecs.AsgCapacityProvider(
-      this,
-      'BlogCapacityProvider',
-      {
-        autoScalingGroup,
-      },
-    );
-    cluster.addAsgCapacityProvider(capacityProvider);
 
     const service = new ApplicationLoadBalancedEc2Service(this, 'BlogService', {
       taskImageOptions: {
@@ -106,7 +89,7 @@ export class EcsServiceStack extends Construct {
         containerPort: 8000,
         environment: { ...env },
       },
-      vpc,
+      cluster,
       domainName: 'prod.api.chiz.dev',
       domainZone: hostedZone,
       memoryLimitMiB: 512,
