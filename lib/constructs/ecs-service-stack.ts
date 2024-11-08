@@ -82,7 +82,21 @@ export class EcsServiceStack extends Construct {
     const cluster = new ecs.Cluster(this, 'BlogCluster', {
       vpc,
     });
-
+    const asg = new autoscaling.AutoScalingGroup(this, 'BlogASG', {
+      vpc,
+      minCapacity: 1,
+      maxCapacity: 1,
+      instanceType: new ec2.InstanceType('t3.micro'),
+      machineImage: ec2.MachineImage.latestAmazonLinux2023(),
+    });
+    const asgCapacityProvider = new ecs.AsgCapacityProvider(
+      this,
+      'BlogCapacityProvider',
+      {
+        autoScalingGroup: asg,
+      },
+    );
+    cluster.addAsgCapacityProvider(asgCapacityProvider);
     const service = new ApplicationLoadBalancedEc2Service(this, 'BlogService', {
       taskImageOptions: {
         image: conatinerImage,
