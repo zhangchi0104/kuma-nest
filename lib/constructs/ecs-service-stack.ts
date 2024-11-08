@@ -99,6 +99,7 @@ export class EcsServiceStack extends Construct {
       vpc,
       domainName: 'prod.api.chiz.dev',
       domainZone: hostedZone,
+      memoryLimitMiB: 512,
       // certificate,
     });
     this.ecsService = service;
