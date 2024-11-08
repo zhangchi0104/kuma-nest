@@ -1,10 +1,6 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
-
+FROM node:20
 WORKDIR /app/
 # Copy srcfiles
-
-RUN yum update -y && \
- yum install -y  nodejs npm
 COPY . .
 # Install pnpm
 RUN npm i -g pnpm
