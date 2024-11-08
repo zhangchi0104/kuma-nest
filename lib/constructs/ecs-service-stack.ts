@@ -4,6 +4,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 // import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 // import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
 import { CfnOutput } from 'aws-cdk-lib';
@@ -36,17 +37,6 @@ export class EcsServiceStack extends Construct {
     // const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
     //   vpc,
     // });
-    const asg = ecsCluster.addCapacity('BlogCapacity', {
-      instanceType: ec2.InstanceType.of(
-        ec2.InstanceClass.T3,
-        ec2.InstanceSize.MICRO,
-      ),
-      minCapacity: 1,
-      maxCapacity: 1,
-    });
-    asg.scaleOnCpuUtilization('BlogScaling', {
-      targetUtilizationPercent: 70,
-    });
 
     // const taskDefinition = new ecs.Ec2TaskDefinition(this, 'BlogTask');
     // taskDefinition.addContainer('BlogContainer', {
@@ -92,11 +82,20 @@ export class EcsServiceStack extends Construct {
     const cluster = new ecs.Cluster(this, 'BlogCluster', {
       vpc,
     });
+    const autoScalingGroup = new autoscaling.AutoScalingGroup(this, 'BlogASG', {
+      vpc,
+      minCapacity: 1,
+      maxCapacity: 1,
+      instanceType: new ec2.InstanceType('t3.micro'),
+    });
+    autoScalingGroup.scaleOnCpuUtilization('CpuScaling', {
+      targetUtilizationPercent: 50,
+    });
     const capacityProvider = new ecs.AsgCapacityProvider(
       this,
       'BlogCapacityProvider',
       {
-        autoScalingGroup: asg,
+        autoScalingGroup,
       },
     );
     cluster.addAsgCapacityProvider(capacityProvider);
