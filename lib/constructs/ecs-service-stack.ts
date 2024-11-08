@@ -36,17 +36,17 @@ export class EcsServiceStack extends Construct {
     // const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
     //   vpc,
     // });
-    // const asg = ecsCluster.addCapacity('BlogCapacity', {
-    //   instanceType: ec2.InstanceType.of(
-    //     ec2.InstanceClass.T3,
-    //     ec2.InstanceSize.MICRO,
-    //   ),
-    //   minCapacity: 1,
-    //   maxCapacity: 1,
-    // });
-    // asg.scaleOnCpuUtilization('BlogScaling', {
-    //   targetUtilizationPercent: 70,
-    // });
+    const asg = ecsCluster.addCapacity('BlogCapacity', {
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T3,
+        ec2.InstanceSize.MICRO,
+      ),
+      minCapacity: 1,
+      maxCapacity: 1,
+    });
+    asg.scaleOnCpuUtilization('BlogScaling', {
+      targetUtilizationPercent: 70,
+    });
 
     // const taskDefinition = new ecs.Ec2TaskDefinition(this, 'BlogTask');
     // taskDefinition.addContainer('BlogContainer', {
@@ -89,6 +89,17 @@ export class EcsServiceStack extends Construct {
     //     new route53Targets.LoadBalancerTarget(loadBalancer),
     //   ),
     // });
+    const cluster = new ecs.Cluster(this, 'BlogCluster', {
+      vpc,
+    });
+    const capacityProvider = new ecs.AsgCapacityProvider(
+      this,
+      'BlogCapacityProvider',
+      {
+        autoScalingGroup: asg,
+      },
+    );
+    cluster.addAsgCapacityProvider(capacityProvider);
 
     const service = new ApplicationLoadBalancedEc2Service(this, 'BlogService', {
       taskImageOptions: {
