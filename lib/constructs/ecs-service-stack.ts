@@ -1,13 +1,14 @@
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-// import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-// import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
-import { CfnOutput } from 'aws-cdk-lib';
+import { CfnOutput, Duration } from 'aws-cdk-lib';
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
 import path from 'path';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
@@ -16,10 +17,21 @@ type EcsServiceStackProps = ServerProps & {
   vpc: ec2.IVpc;
   hostedZone: route53.IHostedZone;
 };
+type BlogServiceTaskDefinitionProps = {
+  taskDefinitionName: string;
+  containerName: string;
+  containerImage: ecs.ContainerImage;
+  env: ServerProps['env'];
+};
+
+interface EcsClusterProps {
+  vpc: ec2.IVpc;
+  securityGroup: ec2.ISecurityGroup;
+}
 export class EcsServiceStack extends Construct {
   public readonly ecsService:
     | ecs.BaseService
-    | ecsp.ApplicationLoadBalancedFargateService;
+    | ecsp.ApplicationLoadBalancedEc2Service;
   constructor(scope: Construct, id: string, props: EcsServiceStackProps) {
     const { env, vpc, hostedZone } = props;
     super(scope, id);
@@ -34,72 +46,158 @@ export class EcsServiceStack extends Construct {
         platform: Platform.LINUX_AMD64,
       },
     );
-    // const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
-    //   vpc,
-    // });
+    const securityGroup = this.createSecurityGroup({ vpc });
+    const ecsCluster = this.createCluster({ vpc, securityGroup });
+    const taskDefinition = this.createTaskDefinition({
+      taskDefinitionName: 'BlogServerTask',
+      containerName: 'BlogServerContainer',
+      env: env,
+      containerImage: conatinerImage,
+    });
 
-    // const taskDefinition = new ecs.Ec2TaskDefinition(this, 'BlogTask');
-    // taskDefinition.addContainer('BlogContainer', {
-    //   containerName: 'BlogContainer',
-    //   image: conatinerImage,
-    //   memoryLimitMiB: 400,
-    //   environment: { ...env },
-    //   portMappings: [
-    //     { containerPort: 8000, hostPort: 8000, protocol: ecs.Protocol.TCP },
-    //   ],
-    // });
-
-    // const service = new ecs.Ec2Service(this, 'BlogService', {
-    //   cluster: ecsCluster,
-    //   taskDefinition,
-    // });
-    // const loadBalancer = new elbv2.ApplicationLoadBalancer(
-    //   this,
-    //   'LoadBalancer',
-    //   {
-    //     vpc,
-    //     internetFacing: true,
-    //   },
-    // );
-    // const listener = loadBalancer.addListener('Listener', {
-    //   port: 80,
-    // });
-    // listener.addTargets('ECS', {
-    //   port: 8000,
-    //   targets: [
-    //     service.loadBalancerTarget({
-    //       containerName: 'BlogContainer',
-    //       containerPort: 8000,
-    //     }),
-    //   ],
-    // });
-    // new route53.ARecord(this, 'AliasRecord', {
-    //   zone: hostedZone,
-    //   target: route53.RecordTarget.fromAlias(
-    //     new route53Targets.LoadBalancerTarget(loadBalancer),
-    //   ),
-    // });
-
-    const service = new ecsp.ApplicationLoadBalancedFargateService(
+    const service = new ecs.Ec2Service(this, 'BlogService', {
+      cluster: ecsCluster,
+      taskDefinition,
+    });
+    const target = service.loadBalancerTarget({
+      containerName: 'BlogServerContainer',
+      containerPort: 8000,
+    });
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      'BlogService',
+      'BlogLoadBalancer',
       {
-        taskImageOptions: {
-          image: conatinerImage,
-          containerPort: 8000,
-          environment: { ...env },
-        },
         vpc,
-        domainName: 'prod.api.chiz.dev',
-        domainZone: hostedZone,
-        memoryLimitMiB: 512,
-        cpu: 256,
-        // certificate,
+        internetFacing: true,
+        securityGroup: securityGroup,
       },
     );
-    this.ecsService = service;
-    new CfnOutput(this, 'LoadBalancerDNS', {
-      value: service.loadBalancer.loadBalancerDnsName,
+
+    const listener = loadBalancer.addListener('HttpsListener', {
+      protocol: elbv2.ApplicationProtocol.HTTPS,
+      certificates: [certificate],
     });
+
+    listener.addTargets('BlogTargetGroup', {
+      port: 8000,
+      targets: [target],
+      healthCheck: {
+        path: '/hello',
+      },
+    });
+    this.ecsService = service;
+    new route53.ARecord(this, 'BlogARecord', {
+      zone: hostedZone,
+      target: route53.RecordTarget.fromAlias(
+        new route53Targets.LoadBalancerTarget(loadBalancer),
+      ),
+      recordName: 'prod',
+    });
+
+    new CfnOutput(this, 'LoadBalancerDNS', {
+      value: loadBalancer.loadBalancerDnsName,
+    });
+  }
+
+  private createTaskDefinition(props: BlogServiceTaskDefinitionProps) {
+    const logging = new ecs.AwsLogDriver({ streamPrefix: 'blog-prod' });
+    const taskDefinition = new ecs.TaskDefinition(
+      this,
+      'BlogBackendTaskDefinition',
+      {
+        family: props.taskDefinitionName,
+        compatibility: ecs.Compatibility.EC2,
+        cpu: '256',
+        memoryMiB: '512',
+        networkMode: ecs.NetworkMode.BRIDGE,
+      },
+    );
+    taskDefinition.addContainer(props.containerName, {
+      image: props.containerImage,
+      containerName: props.containerName,
+      portMappings: [
+        {
+          containerPort: this.containerPort,
+          hostPort: this.hostPort,
+          protocol: ecs.Protocol.TCP,
+          name: 'nest-port',
+        },
+      ],
+
+      environment: { ...props.env },
+      logging: logging,
+      healthCheck: {
+        command: ['CMD-SHELL', 'curl -f http://localhost:8000/hello'],
+        startPeriod: Duration.minutes(5),
+        interval: Duration.minutes(1),
+        timeout: Duration.seconds(10),
+        retries: 3,
+      },
+      startTimeout: Duration.minutes(2),
+      cpu: 256,
+      memoryLimitMiB: 512,
+    });
+    return taskDefinition;
+  }
+
+  private createCluster(props: EcsClusterProps) {
+    const { vpc } = props;
+    const ecsCluster = new ecs.Cluster(this, 'BlogCluster', {
+      vpc,
+    });
+    const asg = new autoscaling.AutoScalingGroup(this, 'ASG', {
+      vpc,
+      instanceType: new ec2.InstanceType('t2.micro'),
+      machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
+      minCapacity: 1,
+      maxCapacity: 1,
+      securityGroup: props.securityGroup,
+    });
+    const capacityProvider = new ecs.AsgCapacityProvider(
+      this,
+      'CapacityProvider',
+      {
+        autoScalingGroup: asg,
+      },
+    );
+    ecsCluster.addAsgCapacityProvider(capacityProvider);
+    return ecsCluster;
+  }
+  private createSecurityGroup(props: { vpc: ec2.IVpc }) {
+    const { vpc } = props;
+    const securityGroup = new ec2.SecurityGroup(this, 'BlogSecurityGroup', {
+      vpc,
+    });
+    // Allow any one to connect port 443
+    // Allow anyone to connect port 8000
+    securityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(443),
+      'Allow HTTPS traffic from anywhere IPv4',
+    );
+    securityGroup.addIngressRule(
+      ec2.Peer.anyIpv6(),
+      ec2.Port.tcp(443),
+      'Allow HTTPS traffic from anywhere IPv4',
+    );
+    securityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(8000),
+      'Allow HTTPS traffic from anywhere IPv4',
+    );
+    securityGroup.addIngressRule(
+      ec2.Peer.anyIpv6(),
+      ec2.Port.tcp(8000),
+      'Allow HTTPS traffic from anywhere IPv4',
+    );
+    return securityGroup;
+  }
+
+  private get containerPort() {
+    return 8000;
+  }
+
+  private get hostPort() {
+    return 8000;
   }
 }
