@@ -21,10 +21,7 @@ export class LambdaStack extends Construct {
       code: lambda.DockerImageCode.fromImageAsset(
         path.join(__dirname, '../../'),
         {
-          buildArgs: {
-            MAIN_SRC: 'src/main-serverless.ts',
-          },
-
+          file: 'Dockerfile.lambda',
           platform: Platform.LINUX_AMD64,
         },
       ),
