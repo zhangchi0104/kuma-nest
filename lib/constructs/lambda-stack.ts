@@ -28,6 +28,7 @@ export class LambdaStack extends Construct {
       functionName: `BlogLambda-${this.envName}`,
       environment: {
         ...env,
+        LAZY_DB_CONNECT: 'true',
       },
       timeout: Duration.seconds(30),
     });
