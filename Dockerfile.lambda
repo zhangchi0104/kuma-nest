@@ -26,4 +26,5 @@ WORKDIR /app
 
 COPY --from=builder /app/dist .
 # CMD
+ENTRYPOINT ["/usr/local/bin/npx", "aws-lambda-ric"]
 CMD ["node", "index.js"]
