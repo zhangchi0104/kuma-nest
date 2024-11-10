@@ -8,6 +8,8 @@ import { ProtectedModule } from './protected/protected.module';
 import { BlogMetadataModule } from './blog-metadata/blog-metadata.module';
 import { BlogsModule } from './blogs/blogs.module';
 import { BlogContentModule } from './blog-content/blog-content.module';
+import { APP_FILTER } from '@nestjs/core';
+import { CatchEverythingFilter } from './filters/all-exceptions.filter';
 
 @Module({
   imports: [
@@ -18,6 +20,12 @@ import { BlogContentModule } from './blog-content/blog-content.module';
     BlogContentModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: CatchEverythingFilter,
+    },
+  ],
 })
 export class AppModule {}
