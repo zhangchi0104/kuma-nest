@@ -13,7 +13,7 @@ RUN pnpm i
 
 RUN pnpx prisma generate
 
-RUN pnpm build:serverless 
+RUN pnpm build:lambda 
 
 RUN mv dist/client/libquery_engine-*.node dist/ &&\
   rm -r dist/client
