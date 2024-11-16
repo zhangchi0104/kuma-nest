@@ -16,7 +16,7 @@ export class PrismaBlogMetadata extends BlogMetadataService {
   ): Promise<ListBlogMetadataResponse> {
     const cursorAsNumber = dto.cursor;
     const pageSize = dto.pageSize ?? 5;
-    const metadata = await this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       skip: cursorAsNumber,
       take: pageSize + 1,
       orderBy: { createdAt: 'desc' },
@@ -28,14 +28,14 @@ export class PrismaBlogMetadata extends BlogMetadataService {
         },
       },
     });
-    let nextPageCursor = undefined;
-    if (metadata.length === pageSize + 1) {
-      metadata.pop();
-      nextPageCursor = (cursorAsNumber || 0) + pageSize;
+    let offset = undefined;
+    if (posts.length === pageSize + 1) {
+      posts.pop();
+      offset = (cursorAsNumber || 0) + pageSize;
     }
     return {
-      metadata,
-      nextPageCursor,
+      posts,
+      offset,
     };
   }
 }
