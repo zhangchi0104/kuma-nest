@@ -3,14 +3,14 @@ run-name: "Deploy to ${{github.ref == 'ref/heads/main' && 'Production' || 'Devel
 on:
   push:
     branches:
-      - "dev"
-      - "main"
+      - 'dev'
+      - 'main'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  HUSKY: "0"
+  HUSKY: '0'
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
   DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSACTION_URL }}
@@ -31,7 +31,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: "9.6.0"
+          version: '9.6.0'
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -44,12 +44,7 @@ jobs:
       # install dependencies
       - name: Install dependencies
         run: pnpm i
-      # build and bundle
-      - name: Build and bundle application
-        run: |
-          pnpm build:lambda
-          mv dist/client/libquery_engine-rhel-*.node dist/
-          rm -rf dist/client/libquery_engine-*.node
+
       # Bootstrap CDK
       - name: Bootstrap CDK
         run: npx cdk bootstrap
@@ -59,4 +54,3 @@ jobs:
         env:
           JWT_PUBLIC_KEY: ${{ vars.JWT_PUBLIC_KEY }}
           NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-

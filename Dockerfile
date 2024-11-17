@@ -1,4 +1,7 @@
-FROM node:lts-slim as builder
+
+FROM node:lts-slim AS builder
+ARG MAIN_SRC=src/main.ts
+
 WORKDIR /app/
 # Copy srcfiles
 COPY . .
@@ -10,7 +13,8 @@ RUN npm i -g pnpm
 RUN pnpm i
 
 RUN pnpx prisma generate
-RUN pnpm build:local
+RUN echo "building with $MAIN_SRC"
+RUN pnpm ncc build $MAIN_SRC
 
 RUN mv dist/client/libquery_engine-*.node dist/ &&\
   rm -r dist/client

@@ -1,20 +1,11 @@
-import { NestFactory } from '@nestjs/core';
 import serverlessExpress from '@codegenie/serverless-express';
 import { Callback, Context, Handler } from 'aws-lambda';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-//import { TransformCamcelCaseInterceptor } from './utils/camel-case-transformer.util';
+import { bootstrap } from './init';
 
 let server: Handler | null = null;
 
-async function bootstrap(): Promise<Handler> {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-    }),
-  );
-  //app.useGlobalInterceptors(new TransformCamcelCaseInterceptor());
+async function main(): Promise<Handler> {
+  const app = await bootstrap();
   await app.init();
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });
@@ -25,7 +16,6 @@ export const handler: Handler = async (
   context: Context,
   callback: Callback,
 ) => {
-  server = server ?? (await bootstrap());
-  console.error('event', event);
+  server = server ?? (await main());
   return server(event, context, callback);
 };

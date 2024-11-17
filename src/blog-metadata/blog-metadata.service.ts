@@ -8,8 +8,8 @@ export type UpdateBlogMetadata = Partial<
 >;
 
 export interface ListBlogMetadataResponse {
-  metadata: Post[];
-  nextPageCursor?: string | number;
+  posts: Post[];
+  offset?: string | number;
 }
 @Injectable()
 export abstract class BlogMetadataService {

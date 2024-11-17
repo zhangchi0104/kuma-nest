@@ -1,4 +1,4 @@
-import { CfnOutput } from 'aws-cdk-lib';
+import { CfnOutput, Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
@@ -7,6 +7,8 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
+import path from 'path';
+import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 type LambdaStackProps = ServerProps & {
   hostedZone: route53.IHostedZone;
 };
@@ -15,26 +17,22 @@ export class LambdaStack extends Construct {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     const { env, hostedZone } = props;
     super(scope, id);
-    const lambdaFunction = new lambda.Function(this, 'BlogLambda', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset('dist'),
-      environment: { ...env },
+    const lambdaFunction = new lambda.DockerImageFunction(this, 'BlogLambda', {
+      code: lambda.DockerImageCode.fromImageAsset(
+        path.join(__dirname, '../../'),
+        {
+          file: 'Dockerfile.lambda',
+          platform: Platform.LINUX_AMD64,
+        },
+      ),
       functionName: `BlogLambda-${this.envName}`,
+      environment: {
+        ...env,
+        LAZY_DB_CONNECT: 'true',
+      },
+      timeout: Duration.seconds(30),
     });
     this.lambda = lambdaFunction;
-    //const dockerfilePath = path.join(__dirname, '..');
-    //const lambda = new cdk.aws_lambda.DockerImageFunction(this, 'BlogLambda', {
-    //  code: cdk.aws_lambda.DockerImageCode.fromImageAsset(dockerfilePath),
-    //  functionName: `BlogLambda-${this.envName}`,
-    //  environment: {
-    //    BLOG_METADATA_TABLE: props.matedataTable.tableName,
-    //    BLOG_CONTENT_BUCKET: props.contentBucket.bucketName,
-    //    BLOG_ASSETS_BUCKET: props.assetsBucket.bucketName,
-    //    JWT_PUBLIC_KEY: process.env.CLERK_PUBLIC_KEY || '',
-    //  },
-    //});
-
     const certificate = acm.Certificate.fromCertificateArn(
       this,
       'DomainCertificate',

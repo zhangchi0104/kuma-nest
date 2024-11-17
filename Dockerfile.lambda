@@ -1,0 +1,37 @@
+
+FROM node:20-buster AS builder
+
+WORKDIR /app/
+# Copy srcfiles
+COPY . .
+RUN apt-get update && \
+    apt-get install -y \
+    g++ \
+    make \
+    cmake \
+    unzip \
+    libcurl4-openssl-dev
+# Install pnpm
+RUN npm i -g pnpm
+
+#  Install dependencies
+RUN pnpm i
+
+RUN pnpx prisma generate
+
+RUN pnpm build:lambda 
+
+RUN mv dist/client/libquery_engine-*.node dist/ &&\
+  rm -r dist/client
+RUN pnpm i aws-lambda-ric
+
+FROM node:20-buster-slim
+RUN apt-get update -y && apt-get install -y openssl curl
+# RUN
+WORKDIR /app
+
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/dist /app
+# CMD
+ENTRYPOINT ["/usr/local/bin/npx", "aws-lambda-ric"]
+CMD ["index.handler"]
