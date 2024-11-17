@@ -2,10 +2,10 @@ name: 'cdk diff'
 
 on:
   pull_request:
-    branches: ['main', 'dev']
+    branches: ['main']
 
 env:
-  HUSKY: "0"
+  HUSKY: '0'
   CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   PRISMA_CLI_BINARY_TARGETS: rhel-openssl-3.0.x
   DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSATION_URL }}

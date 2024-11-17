@@ -47,12 +47,6 @@ export class EcsServiceStack extends Construct {
     );
     const securityGroup = this.createSecurityGroup({ vpc });
     const ecsCluster = this.createCluster({ vpc, securityGroup });
-    const taskDefinition = this.createTaskDefinition({
-      taskDefinitionName: 'BlogServerTask',
-      containerName: 'BlogServerContainer',
-      env: env,
-      containerImage: conatinerImage,
-    });
 
     const service = new ecsp.ApplicationLoadBalancedEc2Service(
       this,
@@ -67,7 +61,7 @@ export class EcsServiceStack extends Construct {
         taskImageOptions: {
           image: conatinerImage,
           containerName: 'BlogServerContainer',
-          containerPort: 8000,
+          containerPort: 3000,
           environment: { ...env },
         },
         serviceName: 'BlogService',
@@ -82,7 +76,7 @@ export class EcsServiceStack extends Construct {
       unhealthyThresholdCount: 2,
       timeout: Duration.seconds(10),
       interval: Duration.minutes(5),
-      path: '/hello',
+      path: '/health',
     });
     this.ecsService = service;
   }

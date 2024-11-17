@@ -1,10 +1,10 @@
 name: Deploy Blog
+
 run-name: "Deploy to ${{github.ref == 'ref/heads/main' && 'Production' || 'Development' }} Environment"
+
 on:
   push:
-    branches:
-      - 'dev'
-      - 'main'
+    branches: ['main']
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
