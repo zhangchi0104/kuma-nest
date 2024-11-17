@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { HttpError } from './errors';
 import { postsRoutes } from './features/posts/with-dynamo';
+import logger from './plugins/requestLogger';
 
 const gloablErrorHandler = () =>
   new Elysia()
@@ -19,9 +20,10 @@ const gloablErrorHandler = () =>
     });
 const app = new Elysia()
   .use(gloablErrorHandler)
+  .use(logger)
   .use(postsRoutes)
   .get('/health', () => new Date().toString())
-  .listen(3000);
+  .listen(8000);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
