@@ -2,7 +2,9 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { CfnOutput } from 'aws-cdk-lib';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
@@ -11,6 +13,7 @@ import { ServerProps } from '../types/ServerEnvironmentVariables';
 import path from 'path';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 import { Duration } from 'aws-cdk-lib';
+import { ApplicationProtocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 type EcsServiceStackProps = ServerProps & {
   vpc: ec2.IVpc;
@@ -47,38 +50,55 @@ export class EcsServiceStack extends Construct {
     );
     const securityGroup = this.createSecurityGroup({ vpc });
     const ecsCluster = this.createCluster({ vpc, securityGroup });
+    const taskDefinition = this.createTaskDefinition({
+      taskDefinitionName: 'BlogServerTask',
+      containerName: 'BlogServerContainer',
+      env: env,
+      containerImage: conatinerImage,
+    });
 
-    const service = new ecsp.ApplicationLoadBalancedEc2Service(
+    const service = new ecs.Ec2Service(this, 'BlogService', {
+      cluster: ecsCluster,
+      taskDefinition,
+    });
+    const target = service.loadBalancerTarget({
+      containerName: 'BlogServerContainer',
+      containerPort: 8000,
+    });
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(
       this,
-      'BlogService',
+      'BlogLoadBalancer',
       {
-        cluster: ecsCluster,
-        // taskDefinition,
-        certificate,
-        memoryLimitMiB: 400,
-        cpu: 256,
-        desiredCount: 1,
-        taskImageOptions: {
-          image: conatinerImage,
-          containerName: 'BlogServerContainer',
-          containerPort: 3000,
-          environment: { ...env },
-        },
-        serviceName: 'BlogService',
-        domainName: 'prod.api.chiz.dev',
-        domainZone: hostedZone,
-        listenerPort: 443,
+        vpc,
+        internetFacing: true,
+        securityGroup: securityGroup,
       },
     );
 
-    service.targetGroup.configureHealthCheck({
-      healthyThresholdCount: 2,
-      unhealthyThresholdCount: 2,
-      timeout: Duration.seconds(10),
-      interval: Duration.minutes(5),
-      path: '/health',
+    const listener = loadBalancer.addListener('HttpsListener', {
+      protocol: elbv2.ApplicationProtocol.HTTPS,
+      certificates: [certificate],
+    });
+
+    listener.addTargets('BlogTargetGroup', {
+      port: 8000,
+      targets: [target],
+      healthCheck: {
+        path: '/health',
+      },
     });
     this.ecsService = service;
+    new route53.ARecord(this, 'BlogARecord', {
+      zone: hostedZone,
+      target: route53.RecordTarget.fromAlias(
+        new route53Targets.LoadBalancerTarget(loadBalancer),
+      ),
+      recordName: 'prod',
+    });
+
+    new CfnOutput(this, 'LoadBalancerDNS', {
+      value: loadBalancer.loadBalancerDnsName,
+    });
   }
 
   private createTaskDefinition(props: BlogServiceTaskDefinitionProps) {
@@ -90,7 +110,7 @@ export class EcsServiceStack extends Construct {
         family: props.taskDefinitionName,
         compatibility: ecs.Compatibility.EC2,
         cpu: '256',
-        memoryMiB: '512',
+        memoryMiB: '400',
         networkMode: ecs.NetworkMode.BRIDGE,
       },
     );
@@ -108,13 +128,6 @@ export class EcsServiceStack extends Construct {
 
       environment: { ...props.env },
       logging: logging,
-      healthCheck: {
-        command: ['CMD-SHELL', 'curl -f http://localhost:8000/hello'],
-        startPeriod: Duration.minutes(5),
-        interval: Duration.minutes(1),
-        timeout: Duration.seconds(10),
-        retries: 3,
-      },
       startTimeout: Duration.minutes(2),
       cpu: 256,
       memoryLimitMiB: 400,

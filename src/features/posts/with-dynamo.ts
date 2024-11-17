@@ -8,6 +8,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts' })
     '/',
     async ({ metadataService, query }) => {
       try {
+        console.log({ query });
         return await metadataService.listBlogMetadata(query);
       } catch (error: any) {
         throw new HttpError(500, error.message);
@@ -16,6 +17,10 @@ export const postsRoutes = new Elysia({ prefix: '/posts' })
     {
       query: t.Object({
         languageCode: t.Enum({ en: 'en', zh: 'zh' }),
+        type: t.Union(
+          [t.Enum({ post: 'post', moment: 'moment' }), t.Undefined()],
+          { default: 'post' },
+        ),
         offset: t.Union([t.String(), t.Undefined()]),
         limit: t.Number({
           minimum: 1,
