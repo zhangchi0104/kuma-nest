@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
 import { HttpError } from './errors';
-import { postsRoutes } from './features/posts/with-dynamo';
+import { postsRoutes } from './routes/posts/(with-prisma)';
 import logger from './plugins/requestLogger';
 
 const gloablErrorHandler = () =>
@@ -15,6 +15,11 @@ const gloablErrorHandler = () =>
           return {
             statusCode: error.status,
             body: error.message,
+          };
+        case 'VALIDATION':
+          return {
+            statusCode: 400,
+            message: error.all.at(0)?.summary,
           };
       }
     });

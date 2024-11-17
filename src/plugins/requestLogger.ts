@@ -11,8 +11,9 @@ const logger = new Elysia({ name: 'logger' })
   .onAfterHandle({ as: 'global' }, ({ request, store }) => {
     const end = process.hrtime.bigint();
     const diff = end - store.startTime;
+    const url = new URL(request.url);
     const diffInSecs = diff / BigInt(1e6);
-    write(`${request.method} ${request.url} - ${diffInSecs}ms`);
+    write(`${request.method} ${url.pathname} - ${diffInSecs}ms`);
   })
   .onError({ as: 'global' }, ({ error, request, store }) => {
     const end = process.hrtime.bigint();
