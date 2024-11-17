@@ -59,7 +59,7 @@ export class EcsServiceStack extends Construct {
       'BlogService',
       {
         cluster: ecsCluster,
-        taskDefinition,
+        // taskDefinition,
         certificate,
         memoryLimitMiB: 400,
         cpu: 256,
@@ -81,9 +81,10 @@ export class EcsServiceStack extends Construct {
       healthyThresholdCount: 2,
       unhealthyThresholdCount: 2,
       timeout: Duration.seconds(10),
-      interval: Duration.minutes(10),
+      interval: Duration.minutes(5),
       path: '/hello',
     });
+    this.ecsService = service;
   }
 
   private createTaskDefinition(props: BlogServiceTaskDefinitionProps) {
