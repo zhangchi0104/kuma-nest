@@ -6,7 +6,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 
-import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
+import { ServerProps } from '../types/ServerEnvironmentVariables';
 import path from 'path';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 type LambdaStackProps = ServerProps & {

@@ -7,7 +7,7 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
 
-import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
+import { ServerProps } from '../types/ServerEnvironmentVariables';
 import path from 'path';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 import { Duration } from 'aws-cdk-lib';

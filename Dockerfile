@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Cache packages installation
 COPY package.json package.json
+COPY tsconfig.json tsconfig.json
 COPY bun.lockb bun.lockb
 
 RUN bun install
