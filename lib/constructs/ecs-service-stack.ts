@@ -2,15 +2,15 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as ecsp from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
-import { CfnOutput, Duration } from 'aws-cdk-lib';
+
 import { ServerProps } from 'lib/types/ServerEnvironmentVariables';
 import path from 'path';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
+import { Duration } from 'aws-cdk-lib';
 
 type EcsServiceStackProps = ServerProps & {
   vpc: ec2.IVpc;
@@ -54,47 +54,35 @@ export class EcsServiceStack extends Construct {
       containerImage: conatinerImage,
     });
 
-    const service = new ecs.Ec2Service(this, 'BlogService', {
-      cluster: ecsCluster,
-      taskDefinition,
-    });
-    const target = service.loadBalancerTarget({
-      containerName: 'BlogServerContainer',
-      containerPort: 8000,
-    });
-    const loadBalancer = new elbv2.ApplicationLoadBalancer(
+    const service = new ecsp.ApplicationLoadBalancedEc2Service(
       this,
-      'BlogLoadBalancer',
+      'BlogService',
       {
-        vpc,
-        internetFacing: true,
-        securityGroup: securityGroup,
+        cluster: ecsCluster,
+        taskDefinition,
+        certificate,
+        memoryLimitMiB: 400,
+        cpu: 256,
+        desiredCount: 1,
+        taskImageOptions: {
+          image: conatinerImage,
+          containerName: 'BlogServerContainer',
+          containerPort: 8000,
+          environment: { ...env },
+        },
+        serviceName: 'BlogService',
+        domainName: 'prod.api.chiz.dev',
+        domainZone: hostedZone,
+        listenerPort: 443,
       },
     );
 
-    const listener = loadBalancer.addListener('HttpsListener', {
-      protocol: elbv2.ApplicationProtocol.HTTPS,
-      certificates: [certificate],
-    });
-
-    listener.addTargets('BlogTargetGroup', {
-      port: 8000,
-      targets: [target],
-      healthCheck: {
-        path: '/hello',
-      },
-    });
-    this.ecsService = service;
-    new route53.ARecord(this, 'BlogARecord', {
-      zone: hostedZone,
-      target: route53.RecordTarget.fromAlias(
-        new route53Targets.LoadBalancerTarget(loadBalancer),
-      ),
-      recordName: 'prod',
-    });
-
-    new CfnOutput(this, 'LoadBalancerDNS', {
-      value: loadBalancer.loadBalancerDnsName,
+    service.targetGroup.configureHealthCheck({
+      healthyThresholdCount: 2,
+      unhealthyThresholdCount: 2,
+      timeout: Duration.seconds(10),
+      interval: Duration.minutes(10),
+      path: '/hello',
     });
   }
 
@@ -134,7 +122,7 @@ export class EcsServiceStack extends Construct {
       },
       startTimeout: Duration.minutes(2),
       cpu: 256,
-      memoryLimitMiB: 512,
+      memoryLimitMiB: 400,
     });
     return taskDefinition;
   }
